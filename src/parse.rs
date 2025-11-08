@@ -7,46 +7,36 @@ enum Associativity {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct Operator {
-    symbol: &'static str,
+struct OperatorInfo {
     precedence: u8,
     associativity: Associativity,
 }
 
-const OPERATORS: &[Operator] = &[
-    Operator {
-        symbol: "^",
-        precedence: 4,
-        associativity: Associativity::Right,
-    },
-    Operator {
-        symbol: "*",
-        precedence: 3,
-        associativity: Associativity::Left,
-    },
-    Operator {
-        symbol: "/",
-        precedence: 3,
-        associativity: Associativity::Left,
-    },
-    Operator {
-        symbol: "+",
-        precedence: 2,
-        associativity: Associativity::Left,
-    },
-    Operator {
-        symbol: "-",
-        precedence: 2,
-        associativity: Associativity::Left,
-    },
-];
-
-fn get_operator(symbol: &str) -> Option<&'static Operator> {
-    OPERATORS.iter().find(|op| op.symbol == symbol)
-}
-
-fn remove_whitespace(s: &mut String) {
-    s.retain(|c| !c.is_whitespace());
+// const OPERATORS
+fn get_operator(symbol: &str) -> Option<&'static OperatorInfo> {
+    match symbol {
+        "^" => Some(&OperatorInfo {
+            precedence: 4,
+            associativity: Associativity::Right,
+        }),
+        "*" => Some(&OperatorInfo {
+            precedence: 3,
+            associativity: Associativity::Left,
+        }),
+        "/" => Some(&OperatorInfo {
+            precedence: 3,
+            associativity: Associativity::Left,
+        }),
+        "+" => Some(&OperatorInfo {
+            precedence: 2,
+            associativity: Associativity::Left,
+        }),
+        "-" => Some(&OperatorInfo {
+            precedence: 2,
+            associativity: Associativity::Left,
+        }),
+        _ => None,
+    }
 }
 
 pub fn get_input() -> String {
@@ -55,27 +45,32 @@ pub fn get_input() -> String {
     input
 }
 
-pub fn get_normalized_input(mut input: &mut String) -> Vec<String> {
-    remove_whitespace(&mut input);
-    // Normalize alternative operator symbols
-    *input = input.replace('÷', "/");
-    let mut parts: Vec<String> = vec![];
+pub fn get_normalized_input(input: &str) -> Vec<String> {
+    let normalized = input
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        .replace('÷', "/");
 
-    let mut accumulated: Vec<char> = vec![];
-    for thing in input.chars() {
-        if thing.to_digit(10).is_some() {
-            accumulated.push(thing)
+    let mut parts = Vec::new();
+    let mut accumulated = String::new();
+
+    for ch in normalized.chars() {
+        if ch.is_ascii_digit() || ch == '.' {
+            accumulated.push(ch);
         } else {
             if !accumulated.is_empty() {
-                parts.push(accumulated.iter().collect());
+                parts.push(accumulated);
+                accumulated = String::new();
             }
-            parts.push(thing.to_string());
-            accumulated.clear();
+            parts.push(ch.to_string());
         }
     }
+
     if !accumulated.is_empty() {
-        parts.push(accumulated.iter().collect());
+        parts.push(accumulated);
     }
+
     parts
 }
 
@@ -84,13 +79,8 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
 
-    let mut reversed_input = input.clone();
-    reversed_input.reverse();
-
     // while there are tokens to be read
-    while reversed_input.len() > 0 {
-        let token = reversed_input.pop().unwrap();
-
+    for token in input.into_iter() {
         // if the token is a number, push it into the output queue
         if token.parse::<f64>().is_ok() {
             output.push(token);
@@ -142,7 +132,7 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
                                 break;
                             }
                             // pop the operator from the operator stack into the output queue
-                            output.push(operators.pop().unwrap().clone())
+                            output.push(operators.pop().unwrap())
                         }
                         None => panic!("Mismatched parentheses found!"),
                     }
@@ -158,9 +148,8 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
         }
     }
 
-    while operators.len() > 0 {
+    while let Some(o) = operators.pop() {
         // assert operator on top of the stack is not a left parenthesis
-        let o = operators.pop().unwrap();
         match o.as_str() {
             "(" => panic!("mismatched parentheses found!"),
             _ => output.push(o),
