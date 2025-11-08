@@ -22,31 +22,13 @@ fn perform_calculation(calculation: &Calculation) -> f64 {
     }
 }
 
-pub fn perform_calculations(mut input: Vec<String>) -> Result<f64, String> {
-    input.reverse();
-
+pub fn perform_calculations(input: Vec<String>) -> Result<f64, String> {
     if input.is_empty() {
         return Err("Input is empty".to_string());
     }
 
-    // if input has length one, return the number
-    if input.len() == 1 {
-        return input[0]
-            .parse()
-            .map_err(|_| format!("Invalid number: {}", input[0]));
-    }
-
-    if input.len() == 2 {
-        // technically something like -4 or 4+ is valid input, but we don't support it
-        return Err("Input too short".to_string());
-    }
-
-    let mut stack: Vec<f64> = vec![
-        input.pop().unwrap().parse().unwrap(),
-        input.pop().unwrap().parse().unwrap(),
-    ];
-    while stack.len() > 1 || input.len() > 0 {
-        let item = input.pop().unwrap();
+    let mut stack: Vec<f64> = vec![];
+    for item in input {
         match item.as_str() {
             "+" | "-" | "/" | "^" | "*" => {
                 let right = stack.pop().unwrap();
@@ -68,6 +50,9 @@ pub fn perform_calculations(mut input: Vec<String>) -> Result<f64, String> {
             }
             _ => stack.push(item.parse().unwrap()),
         }
+    }
+    if stack.len() != 1 {
+        return Err(format!("Invalid expression: {} values remain", stack.len()));
     }
     Ok(stack.pop().unwrap().try_into().unwrap())
 }
@@ -141,10 +126,7 @@ mod tests {
 
     #[test]
     fn test_single_number() {
-        assert_eq!(
-            perform_calculations(vec!["42".to_string()]),
-            Ok(42.0)
-        );
+        assert_eq!(perform_calculations(vec!["42".to_string()]), Ok(42.0));
     }
 
     #[test]
