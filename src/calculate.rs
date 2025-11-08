@@ -22,17 +22,17 @@ fn perform_calculation(calculation: &Calculation) -> f64 {
     }
 }
 
-pub fn perform_calculations(mut input: Vec<String>) -> String {
+pub fn perform_calculations(mut input: Vec<String>) -> Result<String, String> {
     input.reverse();
 
     // if input has length one, return the number
     if input.len() == 1 {
-        return input.pop().unwrap();
+        return Ok(input.pop().unwrap());
     }
 
     if input.len() == 2 {
         // technically something like -4 or 4+ is valid input, but we don't support it
-        panic!("Invalid input");
+        return Err("Input too short".to_string());
     }
 
     let mut stack: Vec<String> = vec![input.pop().unwrap(), input.pop().unwrap()];
@@ -60,7 +60,7 @@ pub fn perform_calculations(mut input: Vec<String>) -> String {
             _ => stack.push(item),
         }
     }
-    stack.pop().unwrap().try_into().unwrap()
+    Ok(stack.pop().unwrap().try_into().unwrap())
 }
 
 #[cfg(test)]
@@ -72,7 +72,7 @@ mod tests {
     fn test_basic_addition() {
         assert_eq!(
             perform_calculations(vec!["2".to_string(), "3".to_string(), "+".to_string()]),
-            "5"
+            Ok("5".to_string())
         );
     }
 
@@ -80,7 +80,7 @@ mod tests {
     fn test_basic_subtraction() {
         assert_eq!(
             perform_calculations(vec!["5".to_string(), "3".to_string(), "-".to_string()]),
-            "2"
+            Ok("2".to_string())
         );
     }
 
@@ -88,7 +88,7 @@ mod tests {
     fn test_basic_multiplication() {
         assert_eq!(
             perform_calculations(vec!["4".to_string(), "6".to_string(), "*".to_string()]),
-            "24"
+            Ok("24".to_string())
         );
     }
 
@@ -96,7 +96,7 @@ mod tests {
     fn test_basic_division() {
         assert_eq!(
             perform_calculations(vec!["15".to_string(), "3".to_string(), "/".to_string()]),
-            "5"
+            Ok("5".to_string())
         );
     }
 
@@ -110,7 +110,7 @@ mod tests {
                 "+".to_string(),
                 "*".to_string(),
             ]),
-            "20"
+            Ok("20".to_string())
         );
     }
 
@@ -126,20 +126,23 @@ mod tests {
                 "15".to_string(),
                 "-".to_string(),
             ]),
-            "-14.714285714285714"
+            Ok("-14.714285714285714".to_string())
         );
     }
 
     #[test]
     fn test_single_number() {
-        assert_eq!(perform_calculations(vec!["42".to_string()]), "42");
+        assert_eq!(
+            perform_calculations(vec!["42".to_string()]),
+            Ok("42".to_string())
+        );
     }
 
     #[test]
     fn test_negative_result() {
         assert_eq!(
             perform_calculations(vec!["0".to_string(), "5".to_string(), "-".to_string()]),
-            "-5"
+            Ok("-5".to_string())
         );
     }
 
@@ -153,7 +156,7 @@ mod tests {
                 "-".to_string(),
                 "+".to_string(),
             ]),
-            "0"
+            Ok("0".to_string())
         );
     }
 }
