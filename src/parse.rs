@@ -26,6 +26,8 @@ pub fn get_input() -> String {
 
 pub fn get_normalized_input(mut input: &mut String) -> Vec<String> {
     remove_whitespace(&mut input);
+    // Normalize alternative operator symbols
+    *input = input.replace('÷', "/");
     let mut parts: Vec<String> = vec![];
 
     let mut accumulated: Vec<char> = vec![];
@@ -83,7 +85,9 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
                             || (o2_config.1 == o1_config.1 && o1_config.2 == Associativity::Left)
                         {
                             // pop o2 from the operator stack into the output queue
-                            output.push(o2.to_string());
+                            output.push(operators.pop().unwrap());
+                        } else {
+                            break;
                         }
                     } else {
                         break;
@@ -242,6 +246,30 @@ mod tests {
                 "5".to_string(),
                 "-".to_string(),
                 "+".to_string(),
+            ]
+        )
+    }
+    #[test]
+    fn test_another_example() {
+        let input = vec![
+            "4".to_string(),
+            "+".to_string(),
+            "5".to_string(),
+            "-".to_string(),
+            "2".to_string(),
+            "*".to_string(),
+            "5".to_string(),
+        ];
+        assert_eq!(
+            infix_to_postfix(input),
+            vec![
+                "4".to_string(),
+                "5".to_string(),
+                "+".to_string(),
+                "2".to_string(),
+                "5".to_string(),
+                "*".to_string(),
+                "-".to_string()
             ]
         )
     }
