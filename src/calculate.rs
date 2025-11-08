@@ -1,26 +1,31 @@
-enum Operation {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Power,
-}
+// enum Operation {
+//     Add,
+//     Subtract,
+//     Multiply,
+//     Divide,
+//     Power,
+// }
 
-struct Calculation {
-    left: f64,
-    operation: Operation,
-    right: f64,
-}
+// struct Calculation {
+//     left: f64,
+//     operation: Operation,
+//     right: f64,
+// }
 
-fn perform_calculation(calculation: &Calculation) -> f64 {
-    match calculation.operation {
-        Operation::Add => calculation.left + calculation.right,
-        Operation::Subtract => calculation.left - calculation.right,
-        Operation::Multiply => calculation.left * calculation.right,
-        Operation::Divide => calculation.left / calculation.right,
-        Operation::Power => calculation.left.powf(calculation.right),
-    }
-}
+// fn perform_calculation(calculation: &Calculation) -> Result<f64, String> {
+//     match calculation.operation {
+//         Operation::Add => Ok(calculation.left + calculation.right),
+//         Operation::Subtract => Ok(calculation.left - calculation.right),
+//         Operation::Multiply => Ok(calculation.left * calculation.right),
+//         Operation::Divide => {
+//             if calculation.right == 0.0 {
+//                 return Err("Division by zero".to_string());
+//             }
+//             Ok(calculation.left / calculation.right)
+//         }
+//         Operation::Power => Ok(calculation.left.powf(calculation.right)),
+//     }
+// }
 
 pub fn perform_calculations(input: Vec<String>) -> Result<f64, String> {
     if input.is_empty() {
@@ -28,33 +33,39 @@ pub fn perform_calculations(input: Vec<String>) -> Result<f64, String> {
     }
 
     let mut stack: Vec<f64> = vec![];
-    for item in input {
-        match item.as_str() {
+    for token in input {
+        match token.as_str() {
             "+" | "-" | "/" | "^" | "*" => {
+                if stack.len() < 2 {
+                    return Err(format!("Not enough values on stack: {}", stack.len()));
+                }
+
                 let right = stack.pop().unwrap();
                 let left = stack.pop().unwrap();
-                let calculation = Calculation {
-                    left,
-                    operation: match item.as_str() {
-                        "+" => Operation::Add,
-                        "-" => Operation::Subtract,
-                        "*" => Operation::Multiply,
-                        "/" => Operation::Divide,
-                        "^" => Operation::Power,
-                        _ => panic!("Unknown operation"),
-                    },
-                    right,
+
+                let result = match token.as_str() {
+                    "+" => left + right,
+                    "-" => left - right,
+                    "*" => left * right,
+                    "/" => left / right,
+                    "^" => left.powf(right),
+                    _ => unreachable!(), // These have already been checked above
                 };
-                let result = perform_calculation(&calculation);
-                stack.push(result)
+                stack.push(result);
             }
-            _ => stack.push(item.parse().unwrap()),
+            _ => {
+                let value = token
+                    .parse()
+                    .map_err(|e| format!("Invalid number: {}", e))
+                    .unwrap();
+                stack.push(value);
+            }
         }
     }
     if stack.len() != 1 {
         return Err(format!("Invalid expression: {} values remain", stack.len()));
     }
-    Ok(stack.pop().unwrap().try_into().unwrap())
+    Ok(stack.pop().unwrap())
 }
 
 #[cfg(test)]

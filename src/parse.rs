@@ -75,7 +75,7 @@ pub fn get_normalized_input(input: &str) -> Vec<String> {
 }
 
 // shunting yard https://en.wikipedia.org/wiki/Shunting_yard_algorithm
-pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
+pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
     let mut output: Vec<String> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
 
@@ -134,28 +134,28 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
                             // pop the operator from the operator stack into the output queue
                             output.push(operators.pop().unwrap())
                         }
-                        None => panic!("Mismatched parentheses found!"),
+                        None => return Err("Mismatched parentheses found!".to_string()),
                     }
                 }
                 // pop the left parenthesis from the operator stack and discard it
                 let o = operators.pop().unwrap();
                 if o != "(" {
-                    panic!("Unexpected!");
+                    return Err("Expected left parenthesis".to_string());
                 }
                 // handle more functions here
             }
-            _ => panic!("Something isn't supported here"),
+            _ => return Err(format!("Found unsupported token: {}", token)),
         }
     }
 
     while let Some(o) = operators.pop() {
         // assert operator on top of the stack is not a left parenthesis
         match o.as_str() {
-            "(" => panic!("mismatched parentheses found!"),
+            "(" => return Err("Mismatched parentheses found!".to_string()),
             _ => output.push(o),
         }
     }
-    output
+    Ok(output)
 }
 
 #[cfg(test)]
@@ -168,7 +168,7 @@ mod tests {
         let input = vec!["4".to_string(), "+".to_string(), "5".to_string()];
         assert_eq!(
             infix_to_postfix(input),
-            vec!["4".to_string(), "5".to_string(), "+".to_string()]
+            Ok(vec!["4".to_string(), "5".to_string(), "+".to_string()])
         )
     }
 
@@ -177,7 +177,7 @@ mod tests {
         let input = vec!["4".to_string(), "-".to_string(), "5".to_string()];
         assert_eq!(
             infix_to_postfix(input),
-            vec!["4".to_string(), "5".to_string(), "-".to_string()]
+            Ok(vec!["4".to_string(), "5".to_string(), "-".to_string()])
         )
     }
 
@@ -186,7 +186,7 @@ mod tests {
         let input = vec!["4".to_string(), "*".to_string(), "5".to_string()];
         assert_eq!(
             infix_to_postfix(input),
-            vec!["4".to_string(), "5".to_string(), "*".to_string()]
+            Ok(vec!["4".to_string(), "5".to_string(), "*".to_string()])
         )
     }
 
@@ -195,7 +195,7 @@ mod tests {
         let input = vec!["4".to_string(), "/".to_string(), "5".to_string()];
         assert_eq!(
             infix_to_postfix(input),
-            vec!["4".to_string(), "5".to_string(), "/".to_string()]
+            Ok(vec!["4".to_string(), "5".to_string(), "/".to_string()])
         )
     }
 
@@ -204,7 +204,7 @@ mod tests {
         let input = vec!["4".to_string(), "^".to_string(), "5".to_string()];
         assert_eq!(
             infix_to_postfix(input),
-            vec!["4".to_string(), "5".to_string(), "^".to_string()]
+            Ok(vec!["4".to_string(), "5".to_string(), "^".to_string()])
         )
     }
 
@@ -231,7 +231,7 @@ mod tests {
         // output: 3 4 2 × 1 5 − 2 3 ^ ^ ÷ +
         assert_eq!(
             infix_to_postfix(input),
-            vec![
+            Ok(vec![
                 "3".to_string(),
                 "4".to_string(),
                 "2".to_string(),
@@ -245,7 +245,7 @@ mod tests {
                 "^".to_string(),
                 "/".to_string(),
                 "+".to_string()
-            ]
+            ])
         )
     }
     #[test]
@@ -261,13 +261,13 @@ mod tests {
         ];
         assert_eq!(
             infix_to_postfix(input),
-            vec![
+            Ok(vec![
                 "4".to_string(),
                 "1".to_string(),
                 "5".to_string(),
                 "-".to_string(),
                 "+".to_string(),
-            ]
+            ])
         )
     }
     #[test]
@@ -283,7 +283,7 @@ mod tests {
         ];
         assert_eq!(
             infix_to_postfix(input),
-            vec![
+            Ok(vec![
                 "4".to_string(),
                 "5".to_string(),
                 "+".to_string(),
@@ -291,7 +291,7 @@ mod tests {
                 "5".to_string(),
                 "*".to_string(),
                 "-".to_string()
-            ]
+            ])
         )
     }
 }

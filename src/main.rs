@@ -6,7 +6,7 @@ mod parse;
 fn main() {
     let mut input = parse::get_input();
     let infix_input = parse::get_normalized_input(&mut input);
-    let postfix_input = infix_to_postfix(infix_input);
+    let postfix_input = infix_to_postfix(infix_input).unwrap();
     let result = perform_calculations(postfix_input);
     match result {
         Ok(result) => println!("{}", result),
@@ -24,7 +24,7 @@ mod tests {
     fn test_wikipedia_example() {
         let mut input = String::from("3 + 4 * 2 ÷ ( 1 - 5 ) ^ 2 ^ 3");
         let normalized_input = get_normalized_input(&mut input);
-        let postfix_input = infix_to_postfix(normalized_input);
+        let postfix_input = infix_to_postfix(normalized_input).unwrap();
         let result = perform_calculations(postfix_input);
         let expected =
             3.0_f64 + 4.0_f64 * 2.0_f64 / (1.0_f64 - 5.0_f64).powf(2.0_f64.powf(3.0_f64));
@@ -34,7 +34,7 @@ mod tests {
     fn test_another_example() {
         let mut input = String::from("4+5-2*5");
         let normalized_input = get_normalized_input(&mut input);
-        let postfix_input = infix_to_postfix(normalized_input);
+        let postfix_input = infix_to_postfix(normalized_input).unwrap();
         let result = perform_calculations(postfix_input);
         let expected = 4.0_f64 + 5.0_f64 - 2.0_f64 * 5.0_f64;
         assert_eq!(result, Ok(expected));
