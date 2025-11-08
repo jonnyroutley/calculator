@@ -22,28 +22,43 @@ fn perform_calculation(calculation: &Calculation) -> f64 {
     }
 }
 
-pub fn perform_calculations(mut stack: Vec<String>) -> String {
-    while stack.len() > 1 {
-        // get first three
-        let operation = stack.pop().unwrap();
-        let right = stack.pop().unwrap();
-        let left = stack.pop().unwrap();
-        println!("left: {}, right: {}, operation: {}", left, right, operation);
+pub fn perform_calculations(mut input: Vec<String>) -> String {
+    input.reverse();
 
-        let calculation = Calculation {
-            left: left.parse().unwrap(),
-            operation: match operation.as_str() {
-                "+" => Operation::Add,
-                "-" => Operation::Subtract,
-                "*" => Operation::Multiply,
-                "/" => Operation::Divide,
-                "^" => Operation::Power,
-                _ => panic!("Unknown operation"),
-            },
-            right: right.parse().unwrap(),
-        };
-        let result = perform_calculation(&calculation);
-        stack.push(result.to_string())
+    // if input has length one, return the number
+    if input.len() == 1 {
+        return input.pop().unwrap();
+    }
+
+    if input.len() == 2 {
+        // technically something like -4 or 4+ is valid input, but we don't support it
+        panic!("Invalid input");
+    }
+
+    let mut stack: Vec<String> = vec![input.pop().unwrap(), input.pop().unwrap()];
+    while stack.len() > 1 || input.len() > 0 {
+        let item = input.pop().unwrap();
+        match item.as_str() {
+            "+" | "-" | "/" | "^" | "*" => {
+                let right = stack.pop().unwrap();
+                let left = stack.pop().unwrap();
+                let calculation = Calculation {
+                    left: left.parse().unwrap(),
+                    operation: match item.as_str() {
+                        "+" => Operation::Add,
+                        "-" => Operation::Subtract,
+                        "*" => Operation::Multiply,
+                        "/" => Operation::Divide,
+                        "^" => Operation::Power,
+                        _ => panic!("Unknown operation"),
+                    },
+                    right: right.parse().unwrap(),
+                };
+                let result = perform_calculation(&calculation);
+                stack.push(result.to_string())
+            }
+            _ => stack.push(item),
+        }
     }
     stack.pop().unwrap().try_into().unwrap()
 }
@@ -89,10 +104,10 @@ mod tests {
     fn test_chained_operations() {
         assert_eq!(
             perform_calculations(vec![
+                "4".to_string(),
                 "2".to_string(),
                 "3".to_string(),
                 "+".to_string(),
-                "4".to_string(),
                 "*".to_string(),
             ]),
             "20"
@@ -129,16 +144,16 @@ mod tests {
     }
 
     #[test]
-    fn test_multiple_additions() {
+    fn test_foo() {
         assert_eq!(
             perform_calculations(vec![
+                "4".to_string(),
                 "1".to_string(),
+                "5".to_string(),
+                "-".to_string(),
                 "+".to_string(),
-                "2".to_string(),
-                "+".to_string(),
-                "3".to_string(),
             ]),
-            "6"
+            "0"
         );
     }
 }

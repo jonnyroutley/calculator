@@ -56,7 +56,6 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
 
     // while there are tokens to be read
     while reversed_input.len() > 0 {
-        // println!("Output: {:?}, operators: {:?}", output, operators);
         let token = reversed_input.pop().unwrap();
 
         // if the token is a number, push it into the output queue
@@ -131,7 +130,6 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
             _ => output.push(o),
         }
     }
-    // println!("Postfix: {:?}", output);
     output
 }
 

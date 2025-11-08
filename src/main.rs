@@ -11,21 +11,19 @@ fn main() {
     println!("Result: {}", result);
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use crate::parse::get_normalized_input;
-//     use pretty_assertions::assert_eq;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parse::get_normalized_input;
+    use pretty_assertions::assert_eq;
 
-//     #[test]
-//     fn test_wikipedia_example() {
-//         let mut input = String::from("3 + 4 * 2 ÷ ( 1 - 5 ) ^ 2 ^ 3");
-//         let normalized_input = get_normalized_input(&mut input);
-//         println!("Normalized input: {:?}", normalized_input);
-//         let postfix_input = infix_to_postfix(normalized_input);
-//         println!("Postfix input: {:?}", postfix_input);
-//         let result = perform_calculations(postfix_input);
-//         let expected = 3 + 4 * 2 / (1 - 5) ^ 2 ^ 3;
-//         assert_eq!(result, expected.to_string());
-//     }
-// }
+    #[test]
+    fn test_wikipedia_example() {
+        let mut input = String::from("3 + 4 * 2 ÷ ( 1 - 5 ) ^ 2 ^ 3");
+        let normalized_input = get_normalized_input(&mut input);
+        let postfix_input = infix_to_postfix(normalized_input);
+        let result = perform_calculations(postfix_input);
+        let expected = 3 + 4 * 2 / (1 - 5) ^ 2 ^ 3;
+        assert_eq!(result, expected.to_string());
+    }
+}
