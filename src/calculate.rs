@@ -1,32 +1,3 @@
-// enum Operation {
-//     Add,
-//     Subtract,
-//     Multiply,
-//     Divide,
-//     Power,
-// }
-
-// struct Calculation {
-//     left: f64,
-//     operation: Operation,
-//     right: f64,
-// }
-
-// fn perform_calculation(calculation: &Calculation) -> Result<f64, String> {
-//     match calculation.operation {
-//         Operation::Add => Ok(calculation.left + calculation.right),
-//         Operation::Subtract => Ok(calculation.left - calculation.right),
-//         Operation::Multiply => Ok(calculation.left * calculation.right),
-//         Operation::Divide => {
-//             if calculation.right == 0.0 {
-//                 return Err("Division by zero".to_string());
-//             }
-//             Ok(calculation.left / calculation.right)
-//         }
-//         Operation::Power => Ok(calculation.left.powf(calculation.right)),
-//     }
-// }
-
 pub fn perform_calculations(input: Vec<String>) -> Result<f64, String> {
     if input.is_empty() {
         return Err("Input is empty".to_string());
@@ -49,7 +20,7 @@ pub fn perform_calculations(input: Vec<String>) -> Result<f64, String> {
                     "*" => left * right,
                     "/" => left / right,
                     "^" => left.powf(right),
-                    _ => unreachable!(), // These have already been checked above
+                    _ => unreachable!(),
                 };
                 stack.push(result);
             }
