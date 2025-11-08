@@ -1,18 +1,49 @@
 use std::io;
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 enum Associativity {
     Left,
     Right,
 }
 
-const OPERATOR_MAP: &[(&str, i32, Associativity)] = &[
-    ("^", 4, Associativity::Right),
-    ("*", 3, Associativity::Left),
-    ("/", 3, Associativity::Left),
-    ("+", 2, Associativity::Left),
-    ("-", 2, Associativity::Left),
+#[derive(Debug, Clone, Copy)]
+struct Operator {
+    symbol: &'static str,
+    precedence: u8,
+    associativity: Associativity,
+}
+
+const OPERATORS: &[Operator] = &[
+    Operator {
+        symbol: "^",
+        precedence: 4,
+        associativity: Associativity::Right,
+    },
+    Operator {
+        symbol: "*",
+        precedence: 3,
+        associativity: Associativity::Left,
+    },
+    Operator {
+        symbol: "/",
+        precedence: 3,
+        associativity: Associativity::Left,
+    },
+    Operator {
+        symbol: "+",
+        precedence: 2,
+        associativity: Associativity::Left,
+    },
+    Operator {
+        symbol: "-",
+        precedence: 2,
+        associativity: Associativity::Left,
+    },
 ];
+
+fn get_operator(symbol: &str) -> Option<&'static Operator> {
+    OPERATORS.iter().find(|op| op.symbol == symbol)
+}
 
 fn remove_whitespace(s: &mut String) {
     s.retain(|c| !c.is_whitespace());
@@ -79,10 +110,11 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
                             break;
                         }
 
-                        let o1_config = OPERATOR_MAP.iter().find(|x| x.0 == token).unwrap();
-                        let o2_config = OPERATOR_MAP.iter().find(|x| x.0 == o2).unwrap();
-                        if o2_config.1 > o1_config.1
-                            || (o2_config.1 == o1_config.1 && o1_config.2 == Associativity::Left)
+                        let o1_config = get_operator(&token).unwrap();
+                        let o2_config = get_operator(o2).unwrap();
+                        if o2_config.precedence > o1_config.precedence
+                            || (o2_config.precedence == o1_config.precedence
+                                && o1_config.associativity == Associativity::Left)
                         {
                             // pop o2 from the operator stack into the output queue
                             output.push(operators.pop().unwrap());
