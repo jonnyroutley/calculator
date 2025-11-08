@@ -28,7 +28,7 @@ mod tests {
         let result = perform_calculations(postfix_input);
         let expected =
             3.0_f64 + 4.0_f64 * 2.0_f64 / (1.0_f64 - 5.0_f64).powf(2.0_f64.powf(3.0_f64));
-        assert_eq!(result, Ok(expected.to_string()));
+        assert_eq!(result, Ok(expected));
     }
     #[test]
     fn test_another_example() {
@@ -36,7 +36,7 @@ mod tests {
         let normalized_input = get_normalized_input(&mut input);
         let postfix_input = infix_to_postfix(normalized_input);
         let result = perform_calculations(postfix_input);
-        let expected = 4 + 5 - 2 * 5;
-        assert_eq!(result, Ok(expected.to_string()));
+        let expected = 4.0_f64 + 5.0_f64 - 2.0_f64 * 5.0_f64;
+        assert_eq!(result, Ok(expected));
     }
 }

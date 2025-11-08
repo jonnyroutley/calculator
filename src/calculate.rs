@@ -22,12 +22,18 @@ fn perform_calculation(calculation: &Calculation) -> f64 {
     }
 }
 
-pub fn perform_calculations(mut input: Vec<String>) -> Result<String, String> {
+pub fn perform_calculations(mut input: Vec<String>) -> Result<f64, String> {
     input.reverse();
+
+    if input.is_empty() {
+        return Err("Input is empty".to_string());
+    }
 
     // if input has length one, return the number
     if input.len() == 1 {
-        return Ok(input.pop().unwrap());
+        return input[0]
+            .parse()
+            .map_err(|_| format!("Invalid number: {}", input[0]));
     }
 
     if input.len() == 2 {
@@ -35,7 +41,10 @@ pub fn perform_calculations(mut input: Vec<String>) -> Result<String, String> {
         return Err("Input too short".to_string());
     }
 
-    let mut stack: Vec<String> = vec![input.pop().unwrap(), input.pop().unwrap()];
+    let mut stack: Vec<f64> = vec![
+        input.pop().unwrap().parse().unwrap(),
+        input.pop().unwrap().parse().unwrap(),
+    ];
     while stack.len() > 1 || input.len() > 0 {
         let item = input.pop().unwrap();
         match item.as_str() {
@@ -43,7 +52,7 @@ pub fn perform_calculations(mut input: Vec<String>) -> Result<String, String> {
                 let right = stack.pop().unwrap();
                 let left = stack.pop().unwrap();
                 let calculation = Calculation {
-                    left: left.parse().unwrap(),
+                    left,
                     operation: match item.as_str() {
                         "+" => Operation::Add,
                         "-" => Operation::Subtract,
@@ -52,12 +61,12 @@ pub fn perform_calculations(mut input: Vec<String>) -> Result<String, String> {
                         "^" => Operation::Power,
                         _ => panic!("Unknown operation"),
                     },
-                    right: right.parse().unwrap(),
+                    right,
                 };
                 let result = perform_calculation(&calculation);
-                stack.push(result.to_string())
+                stack.push(result)
             }
-            _ => stack.push(item),
+            _ => stack.push(item.parse().unwrap()),
         }
     }
     Ok(stack.pop().unwrap().try_into().unwrap())
@@ -72,7 +81,7 @@ mod tests {
     fn test_basic_addition() {
         assert_eq!(
             perform_calculations(vec!["2".to_string(), "3".to_string(), "+".to_string()]),
-            Ok("5".to_string())
+            Ok(5.0)
         );
     }
 
@@ -80,7 +89,7 @@ mod tests {
     fn test_basic_subtraction() {
         assert_eq!(
             perform_calculations(vec!["5".to_string(), "3".to_string(), "-".to_string()]),
-            Ok("2".to_string())
+            Ok(2.0)
         );
     }
 
@@ -88,7 +97,7 @@ mod tests {
     fn test_basic_multiplication() {
         assert_eq!(
             perform_calculations(vec!["4".to_string(), "6".to_string(), "*".to_string()]),
-            Ok("24".to_string())
+            Ok(24.0)
         );
     }
 
@@ -96,7 +105,7 @@ mod tests {
     fn test_basic_division() {
         assert_eq!(
             perform_calculations(vec!["15".to_string(), "3".to_string(), "/".to_string()]),
-            Ok("5".to_string())
+            Ok(5.0)
         );
     }
 
@@ -110,7 +119,7 @@ mod tests {
                 "+".to_string(),
                 "*".to_string(),
             ]),
-            Ok("20".to_string())
+            Ok(20.0)
         );
     }
 
@@ -126,7 +135,7 @@ mod tests {
                 "15".to_string(),
                 "-".to_string(),
             ]),
-            Ok("-14.714285714285714".to_string())
+            Ok(-14.714285714285714)
         );
     }
 
@@ -134,7 +143,7 @@ mod tests {
     fn test_single_number() {
         assert_eq!(
             perform_calculations(vec!["42".to_string()]),
-            Ok("42".to_string())
+            Ok(42.0)
         );
     }
 
@@ -142,7 +151,7 @@ mod tests {
     fn test_negative_result() {
         assert_eq!(
             perform_calculations(vec!["0".to_string(), "5".to_string(), "-".to_string()]),
-            Ok("-5".to_string())
+            Ok(-5.0)
         );
     }
 
@@ -156,7 +165,7 @@ mod tests {
                 "-".to_string(),
                 "+".to_string(),
             ]),
-            Ok("0".to_string())
+            Ok(0.0)
         );
     }
 }
