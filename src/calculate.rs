@@ -25,9 +25,9 @@ fn perform_calculation(calculation: &Calculation) -> f64 {
 pub fn perform_calculations(mut stack: Vec<String>) -> String {
     while stack.len() > 1 {
         // get first three
-        let left = stack.pop().unwrap();
-        let right = stack.pop().unwrap();
         let operation = stack.pop().unwrap();
+        let right = stack.pop().unwrap();
+        let left = stack.pop().unwrap();
         println!("left: {}, right: {}, operation: {}", left, right, operation);
 
         let calculation = Calculation {
@@ -56,7 +56,7 @@ mod tests {
     #[test]
     fn test_basic_addition() {
         assert_eq!(
-            perform_calculations(vec!["+".to_string(), "2".to_string(), "3".to_string()]),
+            perform_calculations(vec!["2".to_string(), "3".to_string(), "+".to_string()]),
             "5"
         );
     }
@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn test_basic_subtraction() {
         assert_eq!(
-            perform_calculations(vec!["-".to_string(), "3".to_string(), "5".to_string()]),
+            perform_calculations(vec!["5".to_string(), "3".to_string(), "-".to_string()]),
             "2"
         );
     }
@@ -72,7 +72,7 @@ mod tests {
     #[test]
     fn test_basic_multiplication() {
         assert_eq!(
-            perform_calculations(vec!["*".to_string(), "4".to_string(), "6".to_string()]),
+            perform_calculations(vec!["4".to_string(), "6".to_string(), "*".to_string()]),
             "24"
         );
     }
@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn test_basic_division() {
         assert_eq!(
-            perform_calculations(vec!["/".to_string(), "3".to_string(), "15".to_string()]),
+            perform_calculations(vec!["15".to_string(), "3".to_string(), "/".to_string()]),
             "5"
         );
     }
@@ -89,11 +89,11 @@ mod tests {
     fn test_chained_operations() {
         assert_eq!(
             perform_calculations(vec![
-                "*".to_string(),
-                "4".to_string(),
-                "+".to_string(),
                 "2".to_string(),
                 "3".to_string(),
+                "+".to_string(),
+                "4".to_string(),
+                "*".to_string(),
             ]),
             "20"
         );
@@ -103,13 +103,13 @@ mod tests {
     fn test_complex_expression() {
         assert_eq!(
             perform_calculations(vec![
-                "-".to_string(),
-                "15".to_string(),
-                "/".to_string(),
-                "7".to_string(),
-                "+".to_string(),
                 "1".to_string(),
-                "1".to_string()
+                "1".to_string(),
+                "+".to_string(),
+                "7".to_string(),
+                "/".to_string(),
+                "15".to_string(),
+                "-".to_string(),
             ]),
             "-14.714285714285714"
         );
@@ -123,7 +123,7 @@ mod tests {
     #[test]
     fn test_negative_result() {
         assert_eq!(
-            perform_calculations(vec!["-".to_string(), "5".to_string(), "0".to_string()]),
+            perform_calculations(vec!["0".to_string(), "5".to_string(), "-".to_string()]),
             "-5"
         );
     }
@@ -132,11 +132,11 @@ mod tests {
     fn test_multiple_additions() {
         assert_eq!(
             perform_calculations(vec![
-                "+".to_string(),
                 "1".to_string(),
                 "+".to_string(),
                 "2".to_string(),
-                "3".to_string()
+                "+".to_string(),
+                "3".to_string(),
             ]),
             "6"
         );

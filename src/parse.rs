@@ -18,10 +18,13 @@ fn remove_whitespace(s: &mut String) {
     s.retain(|c| !c.is_whitespace());
 }
 
-pub fn get_normalized_input() -> Vec<String> {
+pub fn get_input() -> String {
     let mut input = String::new();
     io::stdin().read_line(&mut input).unwrap();
-    println!("Input: {}", input);
+    input
+}
+
+pub fn get_normalized_input(mut input: &mut String) -> Vec<String> {
     remove_whitespace(&mut input);
     let mut parts: Vec<String> = vec![];
 
@@ -30,15 +33,16 @@ pub fn get_normalized_input() -> Vec<String> {
         if thing.to_digit(10).is_some() {
             accumulated.push(thing)
         } else {
-            parts.push(accumulated.iter().collect());
+            if !accumulated.is_empty() {
+                parts.push(accumulated.iter().collect());
+            }
             parts.push(thing.to_string());
             accumulated.clear();
         }
     }
-    parts.push(accumulated.iter().collect());
-    // let parts: Vec<String> = input.split('o').map(|s| s.to_string()).collect();
-    println!("Parts: {:?}", parts);
-    // parts.reverse();
+    if !accumulated.is_empty() {
+        parts.push(accumulated.iter().collect());
+    }
     parts
 }
 
@@ -50,17 +54,23 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
     let mut reversed_input = input.clone();
     reversed_input.reverse();
 
+    // while there are tokens to be read
     while reversed_input.len() > 0 {
-        println!("Output: {:?}, operators: {:?}", output, operators);
+        // println!("Output: {:?}, operators: {:?}", output, operators);
         let token = reversed_input.pop().unwrap();
+
+        // if the token is a number, push it into the output queue
         if token.parse::<f64>().is_ok() {
             output.push(token);
             continue;
         }
-        // if function, push onto operator stack
+        // TODO: implement functions here
 
+        // if the token is an operator,
         match token.as_str() {
             "+" | "-" | "/" | "^" | "*" => {
+                // there is an operator o2 at the top of the operator stack which is not a left parenthesis,
+                // and (o2 has greater precedence than o1 or (o1 and o2 have the same precedence and o1 is left-associative))
                 loop {
                     let o2 = operators.last();
                     if let Some(o2) = o2 {
@@ -73,32 +83,41 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
                         if o2_config.1 > o1_config.1
                             || (o2_config.1 == o1_config.1 && o1_config.2 == Associativity::Left)
                         {
+                            // pop o2 from the operator stack into the output queue
                             output.push(o2.to_string());
                         }
                     } else {
                         break;
                     }
                 }
+                // push o1 onto the operator stack
                 operators.push(token.clone())
             }
-            // here is where you would handle comma
+            // TODO: implement commas here
+            // if the token is a left parenthesis, push it onto the operator stack
             "(" => operators.push(token.clone()),
+            // if the token is a right parenthesis,
             ")" => {
+                // while the operator at the top of the operator stack is not a left parenthesis:
                 loop {
                     let o = operators.last();
                     match o {
-                        Some(o) => output.push(o.clone()),
+                        Some(o) => {
+                            if o == "(" {
+                                break;
+                            }
+                            // pop the operator from the operator stack into the output queue
+                            output.push(operators.pop().unwrap().clone())
+                        }
                         None => panic!("Mismatched parentheses found!"),
                     }
-                    // assert left parenthesis at the top of the operator stack
-                    let o = operators.last().unwrap();
-                    match o.as_str() {
-                        "(" => {
-                            operators.pop();
-                        }
-                        _ => panic!("Something wrong, found {}", o),
-                    }
                 }
+                // pop the left parenthesis from the operator stack and discard it
+                let o = operators.pop().unwrap();
+                if o != "(" {
+                    panic!("Unexpected!");
+                }
+                // handle more functions here
             }
             _ => panic!("Something isn't supported here"),
         }
@@ -112,7 +131,7 @@ pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
             _ => output.push(o),
         }
     }
-    println!("Postfix: {:?}", output);
+    // println!("Postfix: {:?}", output);
     output
 }
 
@@ -203,6 +222,28 @@ mod tests {
                 "^".to_string(),
                 "/".to_string(),
                 "+".to_string()
+            ]
+        )
+    }
+    #[test]
+    fn test_foo() {
+        let input = vec![
+            "4".to_string(),
+            "+".to_string(),
+            "(".to_string(),
+            "1".to_string(),
+            "-".to_string(),
+            "5".to_string(),
+            ")".to_string(),
+        ];
+        assert_eq!(
+            infix_to_postfix(input),
+            vec![
+                "4".to_string(),
+                "1".to_string(),
+                "5".to_string(),
+                "-".to_string(),
+                "+".to_string(),
             ]
         )
     }
