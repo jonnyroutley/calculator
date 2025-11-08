@@ -3,12 +3,19 @@ use crate::{calculate::perform_calculations, parse::infix_to_postfix};
 mod calculate;
 mod parse;
 
-fn main() {
-    let mut input = parse::get_input();
+fn calculate(mut input: String) -> Result<f64, String> {
     let infix_input = parse::get_normalized_input(&mut input);
     let postfix_input = infix_to_postfix(infix_input).unwrap();
     let result = perform_calculations(postfix_input);
     match result {
+        Ok(result) => Ok(result),
+        Err(error) => Err(error),
+    }
+}
+
+fn main() {
+    let input = parse::get_input();
+    match calculate(input) {
         Ok(result) => println!("{}", result),
         Err(error) => println!("Error: {}", error),
     }
@@ -17,26 +24,19 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parse::get_normalized_input;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_wikipedia_example() {
-        let mut input = String::from("3 + 4 * 2 ÷ ( 1 - 5 ) ^ 2 ^ 3");
-        let normalized_input = get_normalized_input(&mut input);
-        let postfix_input = infix_to_postfix(normalized_input).unwrap();
-        let result = perform_calculations(postfix_input);
+        let input = String::from("3 + 4 * 2 ÷ ( 1 - 5 ) ^ 2 ^ 3");
         let expected =
             3.0_f64 + 4.0_f64 * 2.0_f64 / (1.0_f64 - 5.0_f64).powf(2.0_f64.powf(3.0_f64));
-        assert_eq!(result, Ok(expected));
+        assert_eq!(calculate(input), Ok(expected));
     }
     #[test]
     fn test_another_example() {
-        let mut input = String::from("4+5-2*5");
-        let normalized_input = get_normalized_input(&mut input);
-        let postfix_input = infix_to_postfix(normalized_input).unwrap();
-        let result = perform_calculations(postfix_input);
+        let input = String::from("4+5-2*5");
         let expected = 4.0_f64 + 5.0_f64 - 2.0_f64 * 5.0_f64;
-        assert_eq!(result, Ok(expected));
+        assert_eq!(calculate(input), Ok(expected));
     }
 }
