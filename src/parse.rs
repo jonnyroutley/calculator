@@ -1,5 +1,19 @@
 use std::io;
 
+#[derive(PartialEq, Eq)]
+enum Associativity {
+    Left,
+    Right,
+}
+
+const OPERATOR_MAP: &[(&str, i32, Associativity)] = &[
+    ("^", 4, Associativity::Right),
+    ("*", 3, Associativity::Left),
+    ("/", 3, Associativity::Left),
+    ("+", 2, Associativity::Left),
+    ("-", 2, Associativity::Left),
+];
+
 fn remove_whitespace(s: &mut String) {
     s.retain(|c| !c.is_whitespace());
 }
@@ -29,13 +43,16 @@ pub fn get_normalized_input() -> Vec<String> {
 }
 
 // shunting yard https://en.wikipedia.org/wiki/Shunting_yard_algorithm
-pub fn infix_to_postfix(mut input: Vec<String>) -> Vec<String> {
+pub fn infix_to_postfix(input: Vec<String>) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
 
-    while input.len() > 0 {
-        let token = input.pop().unwrap();
-        println!("Parsing token {}", token);
+    let mut reversed_input = input.clone();
+    reversed_input.reverse();
+
+    while reversed_input.len() > 0 {
+        println!("Output: {:?}, operators: {:?}", output, operators);
+        let token = reversed_input.pop().unwrap();
         if token.parse::<f64>().is_ok() {
             output.push(token);
             continue;
@@ -44,9 +61,23 @@ pub fn infix_to_postfix(mut input: Vec<String>) -> Vec<String> {
 
         match token.as_str() {
             "+" | "-" | "/" | "^" | "*" => {
-                while operators.pop().is_some_and(|x| x == "(") {
-                    // possible and condition?
-                    output.push(operators.last().unwrap().clone());
+                loop {
+                    let o2 = operators.last();
+                    if let Some(o2) = o2 {
+                        if o2 == "(" {
+                            break;
+                        }
+
+                        let o1_config = OPERATOR_MAP.iter().find(|x| x.0 == token).unwrap();
+                        let o2_config = OPERATOR_MAP.iter().find(|x| x.0 == o2).unwrap();
+                        if o2_config.1 > o1_config.1
+                            || (o2_config.1 == o1_config.1 && o1_config.2 == Associativity::Left)
+                        {
+                            output.push(o2.to_string());
+                        }
+                    } else {
+                        break;
+                    }
                 }
                 operators.push(token.clone())
             }
@@ -65,7 +96,7 @@ pub fn infix_to_postfix(mut input: Vec<String>) -> Vec<String> {
                         "(" => {
                             operators.pop();
                         }
-                        _ => panic!("Something wrong"),
+                        _ => panic!("Something wrong, found {}", o),
                     }
                 }
             }
@@ -82,7 +113,6 @@ pub fn infix_to_postfix(mut input: Vec<String>) -> Vec<String> {
         }
     }
     println!("Postfix: {:?}", output);
-    output.reverse();
     output
 }
 
@@ -92,11 +122,88 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_basic_infix_conversion() {
+    fn test_basic_infix_conversion_addition() {
         let input = vec!["4".to_string(), "+".to_string(), "5".to_string()];
         assert_eq!(
             infix_to_postfix(input),
-            vec!["5".to_string(), "4".to_string(), "+".to_string()]
+            vec!["4".to_string(), "5".to_string(), "+".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_basic_infix_conversion_subtraction() {
+        let input = vec!["4".to_string(), "-".to_string(), "5".to_string()];
+        assert_eq!(
+            infix_to_postfix(input),
+            vec!["4".to_string(), "5".to_string(), "-".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_basic_infix_conversion_multiplication() {
+        let input = vec!["4".to_string(), "*".to_string(), "5".to_string()];
+        assert_eq!(
+            infix_to_postfix(input),
+            vec!["4".to_string(), "5".to_string(), "*".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_basic_infix_conversion_division() {
+        let input = vec!["4".to_string(), "/".to_string(), "5".to_string()];
+        assert_eq!(
+            infix_to_postfix(input),
+            vec!["4".to_string(), "5".to_string(), "/".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_basic_infix_conversion_index() {
+        let input = vec!["4".to_string(), "^".to_string(), "5".to_string()];
+        assert_eq!(
+            infix_to_postfix(input),
+            vec!["4".to_string(), "5".to_string(), "^".to_string()]
+        )
+    }
+
+    #[test]
+    fn test_wikipedia_example() {
+        // 3 + 4 × 2 ÷ ( 1 − 5 ) ^ 2 ^ 3
+        let input = vec![
+            "3".to_string(),
+            "+".to_string(),
+            "4".to_string(),
+            "*".to_string(),
+            "2".to_string(),
+            "/".to_string(),
+            "(".to_string(),
+            "1".to_string(),
+            "-".to_string(),
+            "5".to_string(),
+            ")".to_string(),
+            "^".to_string(),
+            "2".to_string(),
+            "^".to_string(),
+            "3".to_string(),
+        ];
+        // output: 3 4 2 × 1 5 − 2 3 ^ ^ ÷ +
+        assert_eq!(
+            infix_to_postfix(input),
+            vec![
+                "3".to_string(),
+                "4".to_string(),
+                "2".to_string(),
+                "*".to_string(),
+                "1".to_string(),
+                "5".to_string(),
+                "-".to_string(),
+                "2".to_string(),
+                "3".to_string(),
+                "^".to_string(),
+                "^".to_string(),
+                "/".to_string(),
+                "+".to_string()
+            ]
         )
     }
 }
