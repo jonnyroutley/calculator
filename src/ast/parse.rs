@@ -1,6 +1,6 @@
 use crate::{
     ast::ast::Node,
-    utils::operators::{Associativity, BinaryOperator, get_operator_info},
+    utils::operators::{Associativity, get_operator_info},
 };
 
 pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
@@ -154,6 +154,7 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use crate::utils::operators::BinaryOperator;
 
     #[test]
     fn test_basic_infix_conversion_addition() {
