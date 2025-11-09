@@ -56,16 +56,33 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
     let mut accumulated = String::new();
 
     for ch in normalized.chars() {
-        if ch.is_ascii_digit() || ch == '.' {
-            accumulated.push(ch);
-        } else if let Some(_) = get_operator(&ch.to_string()) {
-            if !accumulated.is_empty() {
-                parts.push(accumulated);
-                accumulated = String::new();
+        match ch {
+            '+' | '-' | '/' | '*' | '^' | '(' | ')' => {
+                if !accumulated.is_empty() {
+                    parts.push(accumulated);
+                    accumulated = String::new();
+                }
+
+                // + and - are also unary operators
+                // if we find one that has come after an operator, then push in an extra 0 so we can pretend it is binary
+                if ch == '+' || ch == '-' {
+                    let last_part = parts.last();
+                    if last_part.is_none()
+                        || last_part.is_some_and(|x: &String| x.parse::<f64>().is_err())
+                    {
+                        parts.push("0".to_string());
+                    }
+                }
+
+                parts.push(ch.to_string());
             }
-            parts.push(ch.to_string());
-        } else {
-            return Err(format!("Found unsupported token: {}", ch));
+            _ => {
+                if ch.is_ascii_digit() || ch == '.' {
+                    accumulated.push(ch)
+                } else {
+                    return Err(format!("Found unsupported token: {}", ch));
+                }
+            }
         }
     }
 
@@ -282,5 +299,15 @@ mod tests {
                 "-".to_string()
             ])
         )
+    }
+
+    #[test]
+    fn test_unary_operators() {
+        let result = get_normalized_input("4+-5");
+        let expected: Vec<String> = vec!["4", "+", "0", "-", "5"]
+            .iter()
+            .map(|x| x.to_string())
+            .collect();
+        assert_eq!(result, Ok(expected))
     }
 }
