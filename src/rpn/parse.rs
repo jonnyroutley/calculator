@@ -75,136 +75,66 @@ pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::test::tokens;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_basic_infix_conversion_addition() {
-        let input = vec!["4".to_string(), "+".to_string(), "5".to_string()];
-        assert_eq!(
-            infix_to_postfix(input),
-            Ok(vec!["4".to_string(), "5".to_string(), "+".to_string()])
-        )
+        let input = tokens(&["4", "+", "5"]);
+        assert_eq!(infix_to_postfix(input), Ok(tokens(&["4", "5", "+"])))
     }
 
     #[test]
     fn test_basic_infix_conversion_subtraction() {
-        let input = vec!["4".to_string(), "-".to_string(), "5".to_string()];
-        assert_eq!(
-            infix_to_postfix(input),
-            Ok(vec!["4".to_string(), "5".to_string(), "-".to_string()])
-        )
+        let input = tokens(&["4", "-", "5"]);
+        assert_eq!(infix_to_postfix(input), Ok(tokens(&["4", "5", "-"])))
     }
 
     #[test]
     fn test_basic_infix_conversion_multiplication() {
-        let input = vec!["4".to_string(), "*".to_string(), "5".to_string()];
-        assert_eq!(
-            infix_to_postfix(input),
-            Ok(vec!["4".to_string(), "5".to_string(), "*".to_string()])
-        )
+        let input = tokens(&["4", "*", "5"]);
+        assert_eq!(infix_to_postfix(input), Ok(tokens(&["4", "5", "*"])))
     }
 
     #[test]
     fn test_basic_infix_conversion_division() {
-        let input = vec!["4".to_string(), "/".to_string(), "5".to_string()];
-        assert_eq!(
-            infix_to_postfix(input),
-            Ok(vec!["4".to_string(), "5".to_string(), "/".to_string()])
-        )
+        let input = tokens(&["4", "/", "5"]);
+        assert_eq!(infix_to_postfix(input), Ok(tokens(&["4", "5", "/"])))
     }
 
     #[test]
     fn test_basic_infix_conversion_index() {
-        let input = vec!["4".to_string(), "^".to_string(), "5".to_string()];
-        assert_eq!(
-            infix_to_postfix(input),
-            Ok(vec!["4".to_string(), "5".to_string(), "^".to_string()])
-        )
+        let input = tokens(&["4", "^", "5"]);
+        assert_eq!(infix_to_postfix(input), Ok(tokens(&["4", "5", "^"])))
     }
 
     #[test]
     fn test_wikipedia_example() {
-        let input = vec![
-            "3".to_string(),
-            "+".to_string(),
-            "4".to_string(),
-            "*".to_string(),
-            "2".to_string(),
-            "/".to_string(),
-            "(".to_string(),
-            "1".to_string(),
-            "-".to_string(),
-            "5".to_string(),
-            ")".to_string(),
-            "^".to_string(),
-            "2".to_string(),
-            "^".to_string(),
-            "3".to_string(),
-        ];
+        let input = tokens(&[
+            "3", "+", "4", "*", "2", "/", "(", "1", "-", "5", ")", "^", "2", "^", "3",
+        ]);
 
         assert_eq!(
             infix_to_postfix(input),
-            Ok(vec![
-                "3".to_string(),
-                "4".to_string(),
-                "2".to_string(),
-                "*".to_string(),
-                "1".to_string(),
-                "5".to_string(),
-                "-".to_string(),
-                "2".to_string(),
-                "3".to_string(),
-                "^".to_string(),
-                "^".to_string(),
-                "/".to_string(),
-                "+".to_string()
-            ])
+            Ok(tokens(&[
+                "3", "4", "2", "*", "1", "5", "-", "2", "3", "^", "^", "/", "+"
+            ]))
         )
     }
     #[test]
     fn test_foo() {
-        let input = vec![
-            "4".to_string(),
-            "+".to_string(),
-            "(".to_string(),
-            "1".to_string(),
-            "-".to_string(),
-            "5".to_string(),
-            ")".to_string(),
-        ];
+        let input = tokens(&["4", "+", "(", "1", "-", "5", ")"]);
         assert_eq!(
             infix_to_postfix(input),
-            Ok(vec![
-                "4".to_string(),
-                "1".to_string(),
-                "5".to_string(),
-                "-".to_string(),
-                "+".to_string(),
-            ])
+            Ok(tokens(&["4", "1", "5", "-", "+"]))
         )
     }
     #[test]
     fn test_another_example() {
-        let input = vec![
-            "4".to_string(),
-            "+".to_string(),
-            "5".to_string(),
-            "-".to_string(),
-            "2".to_string(),
-            "*".to_string(),
-            "5".to_string(),
-        ];
+        let input = tokens(&["4", "+", "5", "-", "2", "*", "5"]);
         assert_eq!(
             infix_to_postfix(input),
-            Ok(vec![
-                "4".to_string(),
-                "5".to_string(),
-                "+".to_string(),
-                "2".to_string(),
-                "5".to_string(),
-                "*".to_string(),
-                "-".to_string()
-            ])
+            Ok(tokens(&["4", "5", "+", "2", "5", "*", "-"]))
         )
     }
 }

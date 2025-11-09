@@ -153,12 +153,13 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use pretty_assertions::assert_eq;
     use crate::utils::operators::BinaryOperator;
+    use crate::utils::test::tokens;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_basic_infix_conversion_addition() {
-        let input = vec!["4".to_string(), "+".to_string(), "5".to_string()];
+        let input = tokens(&["4", "+", "5"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {
@@ -171,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_basic_infix_conversion_subtraction() {
-        let input = vec!["4".to_string(), "-".to_string(), "5".to_string()];
+        let input = tokens(&["4", "-", "5"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {
@@ -184,7 +185,7 @@ mod tests {
 
     #[test]
     fn test_basic_infix_conversion_multiplication() {
-        let input = vec!["4".to_string(), "*".to_string(), "5".to_string()];
+        let input = tokens(&["4", "*", "5"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {
@@ -197,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_basic_infix_conversion_division() {
-        let input = vec!["4".to_string(), "/".to_string(), "5".to_string()];
+        let input = tokens(&["4", "/", "5"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {
@@ -210,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_basic_infix_conversion_index() {
-        let input = vec!["4".to_string(), "^".to_string(), "5".to_string()];
+        let input = tokens(&["4", "^", "5"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {
@@ -223,15 +224,7 @@ mod tests {
 
     #[test]
     fn test_foo() {
-        let input = vec![
-            "4".to_string(),
-            "+".to_string(),
-            "(".to_string(),
-            "1".to_string(),
-            "-".to_string(),
-            "5".to_string(),
-            ")".to_string(),
-        ];
+        let input = tokens(&["4", "+", "(", "1", "-", "5", ")"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {
@@ -247,15 +240,7 @@ mod tests {
     }
     #[test]
     fn test_another_example() {
-        let input = vec![
-            "4".to_string(),
-            "+".to_string(),
-            "5".to_string(),
-            "-".to_string(),
-            "2".to_string(),
-            "*".to_string(),
-            "5".to_string(),
-        ];
+        let input = tokens(&["4", "+", "5", "-", "2", "*", "5"]);
         assert_eq!(
             infix_to_ast(input),
             Ok(Node::BinaryExpr {

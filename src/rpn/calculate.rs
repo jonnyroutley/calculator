@@ -42,50 +42,33 @@ pub fn perform_calculations(input: Vec<String>) -> Result<f64, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::utils::test::tokens;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_basic_addition() {
-        assert_eq!(
-            perform_calculations(vec!["2".to_string(), "3".to_string(), "+".to_string()]),
-            Ok(5.0)
-        );
+        assert_eq!(perform_calculations(tokens(&["2", "3", "+"])), Ok(5.0));
     }
 
     #[test]
     fn test_basic_subtraction() {
-        assert_eq!(
-            perform_calculations(vec!["5".to_string(), "3".to_string(), "-".to_string()]),
-            Ok(2.0)
-        );
+        assert_eq!(perform_calculations(tokens(&["5", "3", "-"])), Ok(2.0));
     }
 
     #[test]
     fn test_basic_multiplication() {
-        assert_eq!(
-            perform_calculations(vec!["4".to_string(), "6".to_string(), "*".to_string()]),
-            Ok(24.0)
-        );
+        assert_eq!(perform_calculations(tokens(&["4", "6", "*"])), Ok(24.0));
     }
 
     #[test]
     fn test_basic_division() {
-        assert_eq!(
-            perform_calculations(vec!["15".to_string(), "3".to_string(), "/".to_string()]),
-            Ok(5.0)
-        );
+        assert_eq!(perform_calculations(tokens(&["15", "3", "/"])), Ok(5.0));
     }
 
     #[test]
     fn test_chained_operations() {
         assert_eq!(
-            perform_calculations(vec![
-                "4".to_string(),
-                "2".to_string(),
-                "3".to_string(),
-                "+".to_string(),
-                "*".to_string(),
-            ]),
+            perform_calculations(tokens(&["4", "2", "3", "+", "*",])),
             Ok(20.0)
         );
     }
@@ -93,42 +76,25 @@ mod tests {
     #[test]
     fn test_complex_expression() {
         assert_eq!(
-            perform_calculations(vec![
-                "1".to_string(),
-                "1".to_string(),
-                "+".to_string(),
-                "7".to_string(),
-                "/".to_string(),
-                "15".to_string(),
-                "-".to_string(),
-            ]),
+            perform_calculations(tokens(&["1", "1", "+", "7", "/", "15", "-",])),
             Ok(-14.714285714285714)
         );
     }
 
     #[test]
     fn test_single_number() {
-        assert_eq!(perform_calculations(vec!["42".to_string()]), Ok(42.0));
+        assert_eq!(perform_calculations(tokens(&["42"])), Ok(42.0));
     }
 
     #[test]
     fn test_negative_result() {
-        assert_eq!(
-            perform_calculations(vec!["0".to_string(), "5".to_string(), "-".to_string()]),
-            Ok(-5.0)
-        );
+        assert_eq!(perform_calculations(tokens(&["0", "5", "-"])), Ok(-5.0));
     }
 
     #[test]
     fn test_foo() {
         assert_eq!(
-            perform_calculations(vec![
-                "4".to_string(),
-                "1".to_string(),
-                "5".to_string(),
-                "-".to_string(),
-                "+".to_string(),
-            ]),
+            perform_calculations(tokens(&["4", "1", "5", "-", "+",])),
             Ok(0.0)
         );
     }
