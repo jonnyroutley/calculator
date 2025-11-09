@@ -10,7 +10,7 @@ enum BinaryOperator {
     Index,
 }
 
-enum Node {
+pub enum Node {
     Operand {
         value: f64,
     },

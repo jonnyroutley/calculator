@@ -1,8 +1,10 @@
+use crate::utils;
+
 pub mod calculate;
 pub mod parse;
 
 pub fn calculate(mut input: String) -> Result<f64, String> {
-    let infix_input = match parse::get_normalized_input(&mut input) {
+    let infix_input = match utils::input::get_normalized_input(&mut input) {
         Ok(input) => input,
         Err(error) => return Err(error),
     };
