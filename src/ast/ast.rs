@@ -1,22 +1,9 @@
-enum UnaryOperator {
-    Addition,
-    Subtraction,
-}
-enum BinaryOperator {
-    Addition,
-    Subtraction,
-    Multiplication,
-    Division,
-    Index,
-}
+use crate::utils::operators::BinaryOperator;
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Operand {
         value: f64,
-    },
-    UnaryExpression {
-        operation: UnaryOperator,
-        child: Box<Node>,
     },
     BinaryExpr {
         operation: BinaryOperator,
@@ -26,19 +13,9 @@ pub enum Node {
 }
 
 impl Node {
-    fn calculate(&self) -> Result<f64, String> {
+    pub fn calculate(&self) -> Result<f64, String> {
         match self {
             Node::Operand { value } => Ok(*value),
-            Node::UnaryExpression { operation, child } => {
-                let value = match child.calculate() {
-                    Ok(value) => value,
-                    Err(e) => return Err(e),
-                };
-                match operation {
-                    UnaryOperator::Addition => Ok(value),
-                    UnaryOperator::Subtraction => Ok(-value),
-                }
-            }
             Node::BinaryExpr {
                 operation,
                 lhs,
@@ -62,20 +39,4 @@ impl Node {
             }
         }
     }
-}
-
-// struct Ast {
-//     root: Node,
-// }
-
-pub fn test_ast() -> Result<f64, String> {
-    let ast = Node::BinaryExpr {
-        operation: BinaryOperator::Addition,
-        lhs: Box::new(Node::UnaryExpression {
-            operation: UnaryOperator::Subtraction,
-            child: Box::new(Node::Operand { value: 2.0 }),
-        }),
-        rhs: Box::new(Node::Operand { value: 3.0 }),
-    };
-    ast.calculate()
 }

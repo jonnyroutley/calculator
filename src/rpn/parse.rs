@@ -1,4 +1,4 @@
-use crate::utils::operators::{Associativity, get_operator};
+use crate::utils::operators::{Associativity, get_operator_info};
 
 pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
     let mut output: Vec<String> = Vec::new();
@@ -19,8 +19,8 @@ pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
                             break;
                         }
 
-                        let o1_config = get_operator(&token).unwrap();
-                        let o2_config = get_operator(o2).unwrap();
+                        let o1_config = get_operator_info(&token).unwrap();
+                        let o2_config = get_operator_info(o2).unwrap();
                         if o2_config.precedence > o1_config.precedence
                             || (o2_config.precedence == o1_config.precedence
                                 && o1_config.associativity == Associativity::Left)
