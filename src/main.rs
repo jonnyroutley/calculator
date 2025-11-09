@@ -1,56 +1,18 @@
-use crate::{calculate::perform_calculations, parse::infix_to_postfix};
-
-mod calculate;
-mod parse;
-
-fn calculate(mut input: String) -> Result<f64, String> {
-    let infix_input = match parse::get_normalized_input(&mut input) {
-        Ok(input) => input,
-        Err(error) => return Err(error),
-    };
-    let postfix_input = match infix_to_postfix(infix_input) {
-        Ok(input) => input,
-        Err(error) => return Err(error),
-    };
-    let result = match perform_calculations(postfix_input) {
-        Ok(result) => result,
-        Err(error) => return Err(error),
-    };
-    Ok(result)
-}
+mod ast;
+mod rpn;
 
 fn main() {
-    let input = parse::get_input();
-    match calculate(input) {
-        Ok(result) => println!("{}", result),
-        Err(error) => println!("Error: {}", error),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use pretty_assertions::assert_eq;
-    use proptest::prelude::*;
-
-    #[test]
-    fn test_wikipedia_example() {
-        let input = String::from("3 + 4 * 2 ÷ ( 1 - 5 ) ^ 2 ^ 3");
-        let expected =
-            3.0_f64 + 4.0_f64 * 2.0_f64 / (1.0_f64 - 5.0_f64).powf(2.0_f64.powf(3.0_f64));
-        assert_eq!(calculate(input), Ok(expected));
-    }
-    #[test]
-    fn test_another_example() {
-        let input = String::from("4+5-2*5");
-        let expected = 4.0_f64 + 5.0_f64 - 2.0_f64 * 5.0_f64;
-        assert_eq!(calculate(input), Ok(expected));
-    }
-
-    proptest! {
-        #[test]
-        fn doesnt_crash_random_strings(s in "\\PC*") {
-            let _ = calculate(s);
+    let use_rpn = false;
+    if use_rpn {
+        let input = rpn::parse::get_input();
+        match rpn::calculate(input) {
+            Ok(result) => println!("{}", result),
+            Err(error) => println!("Error: {}", error),
+        }
+    } else {
+        match ast::ast::test_ast() {
+            Ok(result) => println!("{}", result),
+            Err(error) => println!("Error: {}", error),
         }
     }
 }
