@@ -12,7 +12,6 @@ struct OperatorInfo {
     associativity: Associativity,
 }
 
-
 fn get_operator(symbol: &str) -> Option<&'static OperatorInfo> {
     match symbol {
         "^" => Some(&OperatorInfo {
@@ -45,7 +44,7 @@ pub fn get_input() -> String {
     input
 }
 
-pub fn get_normalized_input(input: &str) -> Vec<String> {
+pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
     let normalized = input
         .chars()
         .filter(|c| !c.is_whitespace())
@@ -53,17 +52,20 @@ pub fn get_normalized_input(input: &str) -> Vec<String> {
         .replace('÷', "/");
 
     let mut parts = Vec::new();
+    // to hold a number that is split across multiple chars
     let mut accumulated = String::new();
 
     for ch in normalized.chars() {
         if ch.is_ascii_digit() || ch == '.' {
             accumulated.push(ch);
-        } else {
+        } else if let Some(_) = get_operator(&ch.to_string()) {
             if !accumulated.is_empty() {
                 parts.push(accumulated);
                 accumulated = String::new();
             }
             parts.push(ch.to_string());
+        } else {
+            return Err(format!("Found unsupported token: {}", ch));
         }
     }
 
@@ -71,28 +73,21 @@ pub fn get_normalized_input(input: &str) -> Vec<String> {
         parts.push(accumulated);
     }
 
-    parts
+    Ok(parts)
 }
-
 
 pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
     let mut output: Vec<String> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
 
-    
     for token in input.into_iter() {
-        
         if token.parse::<f64>().is_ok() {
             output.push(token);
             continue;
         }
-        
 
-        
         match token.as_str() {
             "+" | "-" | "/" | "^" | "*" => {
-                
-                
                 loop {
                     let o2 = operators.last();
                     if let Some(o2) = o2 {
@@ -106,7 +101,6 @@ pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
                             || (o2_config.precedence == o1_config.precedence
                                 && o1_config.associativity == Associativity::Left)
                         {
-                            
                             output.push(operators.pop().unwrap());
                         } else {
                             break;
@@ -115,15 +109,13 @@ pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
                         break;
                     }
                 }
-                
+
                 operators.push(token.clone())
             }
-            
-            
+
             "(" => operators.push(token.clone()),
-            
+
             ")" => {
-                
                 loop {
                     let o = operators.last();
                     match o {
@@ -131,25 +123,23 @@ pub fn infix_to_postfix(input: Vec<String>) -> Result<Vec<String>, String> {
                             if o == "(" {
                                 break;
                             }
-                            
+
                             output.push(operators.pop().unwrap())
                         }
                         None => return Err("Mismatched parentheses found!".to_string()),
                     }
                 }
-                
+
                 let o = operators.pop().unwrap();
                 if o != "(" {
                     return Err("Expected left parenthesis".to_string());
                 }
-                
             }
             _ => return Err(format!("Found unsupported token: {}", token)),
         }
     }
 
     while let Some(o) = operators.pop() {
-        
         match o.as_str() {
             "(" => return Err("Mismatched parentheses found!".to_string()),
             _ => output.push(o),
@@ -210,7 +200,6 @@ mod tests {
 
     #[test]
     fn test_wikipedia_example() {
-        
         let input = vec![
             "3".to_string(),
             "+".to_string(),
@@ -228,7 +217,7 @@ mod tests {
             "^".to_string(),
             "3".to_string(),
         ];
-        
+
         assert_eq!(
             infix_to_postfix(input),
             Ok(vec![

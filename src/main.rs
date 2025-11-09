@@ -4,13 +4,19 @@ mod calculate;
 mod parse;
 
 fn calculate(mut input: String) -> Result<f64, String> {
-    let infix_input = parse::get_normalized_input(&mut input);
-    let postfix_input = infix_to_postfix(infix_input).unwrap();
-    let result = perform_calculations(postfix_input);
-    match result {
-        Ok(result) => Ok(result),
-        Err(error) => Err(error),
-    }
+    let infix_input = match parse::get_normalized_input(&mut input) {
+        Ok(input) => input,
+        Err(error) => return Err(error),
+    };
+    let postfix_input = match infix_to_postfix(infix_input) {
+        Ok(input) => input,
+        Err(error) => return Err(error),
+    };
+    let result = match perform_calculations(postfix_input) {
+        Ok(result) => result,
+        Err(error) => return Err(error),
+    };
+    Ok(result)
 }
 
 fn main() {
@@ -25,6 +31,7 @@ fn main() {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
+    use proptest::prelude::*;
 
     #[test]
     fn test_wikipedia_example() {
@@ -38,5 +45,12 @@ mod tests {
         let input = String::from("4+5-2*5");
         let expected = 4.0_f64 + 5.0_f64 - 2.0_f64 * 5.0_f64;
         assert_eq!(calculate(input), Ok(expected));
+    }
+
+    proptest! {
+        #[test]
+        fn doesnt_crash_random_strings(s in "\\PC*") {
+            let _ = calculate(s);
+        }
     }
 }
