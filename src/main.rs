@@ -5,15 +5,13 @@ mod utils;
 fn main() {
     let use_rpn = false;
     let input = utils::input::get_input();
+
     if use_rpn {
         match rpn::calculate(input) {
             Ok(result) => println!("{}", result),
             Err(error) => println!("Error: {}", error),
         }
     } else {
-        match ast::calculate(input) {
-            Ok(result) => println!("{}", result),
-            Err(error) => println!("Error: {}", error),
-        }
+        ast::main(input);
     }
 }

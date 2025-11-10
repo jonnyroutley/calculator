@@ -6,6 +6,17 @@ pub fn get_input() -> String {
     input
 }
 
+pub fn is_function_assignment(input: &str) -> bool {
+    input.starts_with("fn")
+}
+
+pub fn is_function_call(input: &str) -> bool {
+    input
+        .split("(")
+        .nth(0)
+        .is_some_and(|x| x.chars().all(|c| c.is_ascii_alphabetic()))
+}
+
 pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
     let normalized = input
         .chars()
@@ -27,6 +38,7 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
 
                 // + and - are also unary operators
                 // if we find one that has come after an operator, then push in an extra 0 so we can pretend it is binary
+                // FIXME: add in brackets too around the 0
                 if ch == '+' || ch == '-' {
                     let last_part = parts.last();
                     if last_part.is_none()
@@ -37,6 +49,9 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
                 }
 
                 parts.push(ch.to_string());
+            },
+            'a'..='z' => {
+                accumulated.push(ch);
             }
             _ => {
                 if ch.is_ascii_digit() || ch == '.' {

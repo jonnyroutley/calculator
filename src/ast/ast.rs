@@ -2,6 +2,9 @@ use crate::utils::operators::BinaryOperator;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
+    Placeholder {
+        position: usize,
+    },
     Operand {
         value: f64,
     },
@@ -13,8 +16,41 @@ pub enum Node {
 }
 
 impl Node {
+    pub fn replace_placeholders(&self, arguments: &Vec<&str>) -> Result<Node, String> {
+        match self {
+            Node::Placeholder { position } => Ok(Node::Operand {
+                value: arguments[*position].parse().unwrap(),
+            }),
+            Node::Operand { value } => Ok(Node::Operand {
+                value: value.clone(),
+            }),
+            Node::BinaryExpr {
+                operation,
+                lhs,
+                rhs,
+            } => Ok(Node::BinaryExpr {
+                operation: operation.clone(),
+                lhs: Box::new(lhs.replace_placeholders(arguments).unwrap()),
+                rhs: Box::new(rhs.replace_placeholders(arguments).unwrap()),
+            }),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FunctionExpr {
+    pub name: String,
+    pub num_arguments: usize,
+    pub template: Box<Node>,
+}
+
+// fn
+impl Node {
     pub fn calculate(&self) -> Result<f64, String> {
         match self {
+            Node::Placeholder {
+                position: _position,
+            } => Err("Placeholder cannot be calculated".to_string()),
             Node::Operand { value } => Ok(*value),
             Node::BinaryExpr {
                 operation,

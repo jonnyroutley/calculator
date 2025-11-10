@@ -1,17 +1,70 @@
 use crate::{
-    ast::ast::Node,
-    utils::operators::{Associativity, get_operator_info},
+    ast::ast::{FunctionExpr, Node},
+    utils::{
+        input::get_normalized_input,
+        operators::{Associativity, get_operator_info},
+    },
 };
+
+pub fn parse_function_assignment(input: String) -> Result<FunctionExpr, String> {
+    //remove whitespace
+    let input = input.replace(" ", "");
+    let arg_names = input
+        .split("(")
+        .nth(1)
+        .unwrap()
+        .split(")")
+        .nth(0)
+        .unwrap()
+        .split(",")
+        .collect::<Vec<&str>>();
+
+    let function_name = input
+        .split("fn")
+        .nth(1)
+        .unwrap()
+        .split("(")
+        .nth(0)
+        .unwrap()
+        .to_string();
+
+    let function_body = input
+        .split("{")
+        .nth(1)
+        .unwrap()
+        .split("}")
+        .nth(0)
+        .unwrap()
+        .to_string();
+
+    // TODO: deal with placeholder nodes
+    let body = infix_to_ast(get_normalized_input(function_body.as_str()).unwrap()).unwrap();
+
+    Ok(FunctionExpr {
+        name: function_name,
+        num_arguments: arg_names.len(),
+        template: Box::new(body),
+    })
+}
 
 pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
     let mut output: Vec<Node> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
+    let mut placeholder_count = 0;
 
     for token in input.into_iter() {
         if token.parse::<f64>().is_ok() {
             output.push(Node::Operand {
                 value: token.parse().unwrap(),
             });
+            continue;
+        }
+
+        if token.chars().all(|c| c.is_ascii_alphabetic()) {
+            output.push(Node::Placeholder {
+                position: placeholder_count,
+            });
+            placeholder_count += 1;
             continue;
         }
 
