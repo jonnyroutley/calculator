@@ -48,6 +48,7 @@ pub fn parse_function_assignment(input: String) -> Result<FunctionExpr, String> 
 }
 
 pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
+    println!("Input: {:?}", input);
     let mut output: Vec<Node> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
     let mut placeholder_count = 0;
@@ -195,6 +196,7 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
         }
     }
     if output.len() != 1 {
+        println!("Output: {:?}", output);
         return Err(format!(
             "Invalid expression: {} values remain",
             output.len()
@@ -311,4 +313,39 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn test_function_assignment() {
+        let input = String::from("fn foo(a, b) { a + b }");
+        assert_eq!(
+            parse_function_assignment(input),
+            Ok(FunctionExpr {
+                name: String::from("foo"),
+                num_arguments: 2,
+                template: Box::new(Node::BinaryExpr {
+                    operation: BinaryOperator::Addition,
+                    lhs: Box::new(Node::Placeholder { position: 0 }),
+                    rhs: Box::new(Node::Placeholder { position: 1 }),
+                }),
+            })
+        );
+    }
+    // #[test]
+    // fn test_placeholder_assignment() {
+    //     let input = tokens(&[
+    //         "fn", "foo", "(", "a", ",", "b", ")", "{", "a", "+", "b", "}",
+    //     ]);
+    //     assert_eq!(
+    //         infix_to_ast(input),
+    //         Ok(Node::FunctionExpr {
+    //             name: "foo".to_string(),
+    //             num_arguments: 2,
+    //             template: Box::new(Node::BinaryExpr {
+    //                 operation: BinaryOperator::Addition,
+    //                 lhs: Box::new(Node::Placeholder { position: 0 }),
+    //                 rhs: Box::new(Node::Placeholder { position: 1 }),
+    //             }),
+    //         })
+    //     );
+    // }
 }

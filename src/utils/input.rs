@@ -24,9 +24,12 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
         .collect::<String>()
         .replace('÷', "/");
 
+    println!("Normalized: {:?}", normalized);
+
     let mut parts = Vec::new();
     // to hold a number that is split across multiple chars
     let mut accumulated = String::new();
+    let mut needs_closing_bracket = false;
 
     for ch in normalized.chars() {
         match ch {
@@ -34,22 +37,34 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
                 if !accumulated.is_empty() {
                     parts.push(accumulated);
                     accumulated = String::new();
+
+                    if needs_closing_bracket {
+                        parts.push(")".to_string());
+                        needs_closing_bracket = false;
+                    }
                 }
 
                 // + and - are also unary operators
                 // if we find one that has come after an operator, then push in an extra 0 so we can pretend it is binary
-                // FIXME: add in brackets too around the 0
                 if ch == '+' || ch == '-' {
                     let last_part = parts.last();
                     if last_part.is_none()
-                        || last_part.is_some_and(|x: &String| x.parse::<f64>().is_err())
+                        || last_part.is_some_and(|x: &String| {
+                            x != ")"
+                                && !x.chars().all(|c| c.is_ascii_alphabetic())
+                                && x.parse::<f64>().is_err()
+                        })
                     {
+                        parts.push("(".to_string());
                         parts.push("0".to_string());
+                        needs_closing_bracket = true;
+                        parts.push(ch.to_string());
+                        continue;
                     }
                 }
 
                 parts.push(ch.to_string());
-            },
+            }
             'a'..='z' => {
                 accumulated.push(ch);
             }
@@ -66,6 +81,9 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
     if !accumulated.is_empty() {
         parts.push(accumulated);
     }
+    if needs_closing_bracket {
+        parts.push(")".to_string());
+    }
 
     Ok(parts)
 }
@@ -78,7 +96,7 @@ mod tests {
     #[test]
     fn test_unary_operators() {
         let result = get_normalized_input("4+-5");
-        let expected: Vec<String> = vec!["4", "+", "0", "-", "5"]
+        let expected: Vec<String> = vec!["4", "+", "(", "0", "-", "5", ")"]
             .iter()
             .map(|x| x.to_string())
             .collect();

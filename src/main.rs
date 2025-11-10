@@ -12,6 +12,6 @@ fn main() {
             Err(error) => println!("Error: {}", error),
         }
     } else {
-        ast::main(input);
+        ast::main(vec![input]);
     }
 }

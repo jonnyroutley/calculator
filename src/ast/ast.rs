@@ -18,9 +18,14 @@ pub enum Node {
 impl Node {
     pub fn replace_placeholders(&self, arguments: &Vec<&str>) -> Result<Node, String> {
         match self {
-            Node::Placeholder { position } => Ok(Node::Operand {
-                value: arguments[*position].parse().unwrap(),
-            }),
+            Node::Placeholder { position } => {
+                println!("Arguments: {:?}", arguments);
+                println!("Position: {:?}", position);
+                println!("Argument: {:?}", arguments[*position]);
+                Ok(Node::Operand {
+                    value: arguments[*position].parse().unwrap(),
+                })
+            }
             Node::Operand { value } => Ok(Node::Operand {
                 value: value.clone(),
             }),
@@ -33,6 +38,9 @@ impl Node {
                 lhs: Box::new(lhs.replace_placeholders(arguments).unwrap()),
                 rhs: Box::new(rhs.replace_placeholders(arguments).unwrap()),
             }),
+            // Node::FunctionExpr {
+
+            // }
         }
     }
 }

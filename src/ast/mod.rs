@@ -17,39 +17,42 @@ pub fn calculate(input: String) -> Result<f64, String> {
     ast.calculate()
 }
 
-pub fn main(input: String) {
-    let mut functions: HashMap<&str, FunctionExpr> = HashMap::new();
-    let _ = match utils::input::is_function_assignment(&input) {
-        true => {
-            let function = parse::parse_function_assignment(input).unwrap();
-            functions.insert(function.name.as_str(), function.clone());
-            println!("Function inserted: {}", function.name);
-        }
-        false => match utils::input::is_function_call(&input) {
+pub fn main(inputs: Vec<String>) {
+    let mut functions: HashMap<String, FunctionExpr> = HashMap::new();
+    for input in inputs {
+        let input = input.replace(" ", "");
+        let _ = match utils::input::is_function_assignment(&input) {
             true => {
-                let function_name = input.split("(").nth(0).unwrap();
-                let function = functions.get(function_name).unwrap();
-                let arguments = input
-                    .split("(")
-                    .nth(1)
-                    .unwrap()
-                    .split(")")
-                    .nth(0)
-                    .unwrap()
-                    .split(",")
-                    .collect::<Vec<&str>>();
+                let function = parse::parse_function_assignment(input).unwrap();
+                functions.insert(function.name.clone(), function.clone());
+                println!("Function inserted: {}", function.name.clone());
+            }
+            false => match utils::input::is_function_call(&input) {
+                true => {
+                    let function_name = input.split("(").nth(0).unwrap();
+                    let function = functions.get(function_name).unwrap();
+                    let arguments = input
+                        .split("(")
+                        .nth(1)
+                        .unwrap()
+                        .split(")")
+                        .nth(0)
+                        .unwrap()
+                        .split(",")
+                        .collect::<Vec<&str>>();
 
-                // get the function template, replace all placeholders with actual arguments, then call calculate
-                let node = function.template.replace_placeholders(&arguments).unwrap();
-                let result = node.calculate();
-                println!("Result: {:?}", result);
-            }
-            false => {
-                let result = calculate(input);
-                println!("Result: {:?}", result);
-            }
-        },
-    };
+                    // get the function template, replace all placeholders with actual arguments, then call calculate
+                    let node = function.template.replace_placeholders(&arguments).unwrap();
+                    let result = node.calculate();
+                    println!("Result: {:?}", result);
+                }
+                false => {
+                    let result = calculate(input);
+                    println!("Result: {:?}", result);
+                }
+            },
+        };
+    }
 }
 
 #[cfg(test)]
@@ -70,6 +73,15 @@ mod tests {
         let input = String::from("4+5-2*5");
         let expected = 4.0_f64 + 5.0_f64 - 2.0_f64 * 5.0_f64;
         assert_eq!(calculate(input), Ok(expected));
+    }
+
+    #[test]
+    fn test_function_assignment() {
+        let inputs = vec![
+            "fn foo(a, b) { a + b }".to_string(),
+            "foo(1, 2)".to_string(),
+        ];
+        main(inputs)
     }
 
     proptest! {
