@@ -1,5 +1,5 @@
 use crate::{
-    ast::ast::{FunctionExpr, Node},
+    ast::ast::{ArgumentDefinition, FunctionExpr, Node},
     utils::{
         input::get_normalized_input,
         operators::{Associativity, get_operator_info},
@@ -42,7 +42,14 @@ pub fn parse_function_assignment(input: String) -> Result<FunctionExpr, String> 
 
     Ok(FunctionExpr {
         name: function_name,
-        num_arguments: arg_names.len(),
+        arguments: arg_names
+            .iter()
+            .enumerate()
+            .map(|(position, name)| ArgumentDefinition {
+                name: name.to_string(),
+                position,
+            })
+            .collect(),
         template: Box::new(body),
     })
 }
@@ -51,7 +58,6 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
     println!("Input: {:?}", input);
     let mut output: Vec<Node> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
-    let mut placeholder_count = 0;
 
     for token in input.into_iter() {
         if token.parse::<f64>().is_ok() {
@@ -62,10 +68,7 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
         }
 
         if token.chars().all(|c| c.is_ascii_alphabetic()) {
-            output.push(Node::Placeholder {
-                position: placeholder_count,
-            });
-            placeholder_count += 1;
+            output.push(Node::Placeholder { arg_name: token });
             continue;
         }
 
@@ -321,11 +324,24 @@ mod tests {
             parse_function_assignment(input),
             Ok(FunctionExpr {
                 name: String::from("foo"),
-                num_arguments: 2,
+                arguments: vec![
+                    ArgumentDefinition {
+                        position: 0,
+                        name: "a".to_string(),
+                    },
+                    ArgumentDefinition {
+                        position: 1,
+                        name: "b".to_string(),
+                    }
+                ],
                 template: Box::new(Node::BinaryExpr {
                     operation: BinaryOperator::Addition,
-                    lhs: Box::new(Node::Placeholder { position: 0 }),
-                    rhs: Box::new(Node::Placeholder { position: 1 }),
+                    lhs: Box::new(Node::Placeholder {
+                        arg_name: "a".to_string(),
+                    }),
+                    rhs: Box::new(Node::Placeholder {
+                        arg_name: "b".to_string(),
+                    }),
                 }),
             })
         );

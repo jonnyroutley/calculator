@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+
 use crate::utils::operators::BinaryOperator;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Node {
     Placeholder {
-        position: usize,
+        arg_name: String,
     },
     Operand {
         value: f64,
@@ -16,14 +18,13 @@ pub enum Node {
 }
 
 impl Node {
-    pub fn replace_placeholders(&self, arguments: &Vec<&str>) -> Result<Node, String> {
+    pub fn replace_placeholders(&self, arguments: &HashMap<String, &str>) -> Result<Node, String> {
         match self {
-            Node::Placeholder { position } => {
-                println!("Arguments: {:?}", arguments);
-                println!("Position: {:?}", position);
-                println!("Argument: {:?}", arguments[*position]);
+            Node::Placeholder {
+                arg_name,
+            } => {
                 Ok(Node::Operand {
-                    value: arguments[*position].parse().unwrap(),
+                    value: arguments.get(arg_name).unwrap().parse().unwrap(),
                 })
             }
             Node::Operand { value } => Ok(Node::Operand {
@@ -46,9 +47,15 @@ impl Node {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct ArgumentDefinition {
+    pub name: String,
+    pub position: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionExpr {
     pub name: String,
-    pub num_arguments: usize,
+    pub arguments: Vec<ArgumentDefinition>,
     pub template: Box<Node>,
 }
 
@@ -57,7 +64,7 @@ impl Node {
     pub fn calculate(&self) -> Result<f64, String> {
         match self {
             Node::Placeholder {
-                position: _position,
+                arg_name: _arg_name,
             } => Err("Placeholder cannot be calculated".to_string()),
             Node::Operand { value } => Ok(*value),
             Node::BinaryExpr {

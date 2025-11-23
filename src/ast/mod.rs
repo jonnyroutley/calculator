@@ -31,7 +31,9 @@ pub fn main(inputs: Vec<String>) {
                 true => {
                     let function_name = input.split("(").nth(0).unwrap();
                     let function = functions.get(function_name).unwrap();
-                    let arguments = input
+
+                    let mut arguments = HashMap::<String, &str>::new();
+                    input
                         .split("(")
                         .nth(1)
                         .unwrap()
@@ -39,7 +41,24 @@ pub fn main(inputs: Vec<String>) {
                         .nth(0)
                         .unwrap()
                         .split(",")
-                        .collect::<Vec<&str>>();
+                        .enumerate()
+                        .for_each(|(index, token)| {
+                            arguments.insert(
+                                function
+                                    .arguments
+                                    .iter()
+                                    .find(|x| x.position == index)
+                                    .unwrap()
+                                    .name
+                                    .clone(),
+                                token,
+                            );
+                        });
+                    // here we have 1,2 at positions 0,1 => lookup names from positions and then put them into map
+                    // .enumerate().for_each(|idx. arg_name| arguments_map.insert(k, v));
+                    // .collect::<Vec<&str>>();
+
+                    // foo(a,b) => foo(1,2) => replace_placeholders({a:1, b:2})
 
                     // get the function template, replace all placeholders with actual arguments, then call calculate
                     let node = function.template.replace_placeholders(&arguments).unwrap();
@@ -81,6 +100,12 @@ mod tests {
             "fn foo(a, b) { a + b }".to_string(),
             "foo(1, 2)".to_string(),
         ];
+        main(inputs)
+    }
+
+    #[test]
+    fn test_function_assignment_double_variable() {
+        let inputs = vec!["fn foo (a) { a * a }".to_string(), "foo(2)".to_string()];
         main(inputs)
     }
 
