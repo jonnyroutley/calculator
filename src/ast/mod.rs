@@ -14,10 +14,8 @@ pub fn calculate(input: String) -> Result<f64, String> {
         Ok(ast) => ast,
         Err(e) => return Err(e),
     };
-    // FIXME: this sucks?
-    let empty_args = HashMap::<String, &str>::new();
-    let replaced = ast.replace_placeholders(&empty_args)?;
-    replaced.calculate()
+    // No arguments are needed for normal calculations, so pass an empty HashMap for placeholders.
+    ast.replace_placeholders(&HashMap::new())?.calculate()
 }
 
 pub fn handle_input(input: String, functions: &mut HashMap<String, FunctionExpr>) {
