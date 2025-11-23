@@ -4,14 +4,15 @@ mod utils;
 
 fn main() {
     let use_rpn = false;
-    let input = utils::input::get_input();
 
     if use_rpn {
-        match rpn::calculate(input) {
-            Ok(result) => println!("{}", result),
-            Err(error) => println!("Error: {}", error),
+        if let Ok(input) = utils::input::get_input() {
+            match rpn::calculate(input) {
+                Ok(result) => println!("{}", result),
+                Err(error) => println!("Error: {}", error),
+            }
         }
     } else {
-        ast::main(vec![input]);
+        ast::main(None);
     }
 }

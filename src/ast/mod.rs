@@ -14,63 +14,92 @@ pub fn calculate(input: String) -> Result<f64, String> {
         Ok(ast) => ast,
         Err(e) => return Err(e),
     };
-    ast.calculate()
+    // FIXME: this sucks?
+    let empty_args = HashMap::<String, &str>::new();
+    let replaced = ast.replace_placeholders(&empty_args)?;
+    replaced.calculate()
 }
 
-pub fn main(inputs: Vec<String>) {
-    let mut functions: HashMap<String, FunctionExpr> = HashMap::new();
-    for input in inputs {
-        let input = input.replace(" ", "");
-        let _ = match utils::input::is_function_assignment(&input) {
-            true => {
-                let function = parse::parse_function_assignment(input).unwrap();
+pub fn handle_input(input: String, functions: &mut HashMap<String, FunctionExpr>) {
+    let _ = match utils::input::is_function_assignment(&input) {
+        true => match parse::parse_function_assignment(input) {
+            Ok(function) => {
                 functions.insert(function.name.clone(), function.clone());
                 println!("Function inserted: {}", function.name.clone());
             }
-            false => match utils::input::is_function_call(&input) {
-                true => {
-                    let function_name = input.split("(").nth(0).unwrap();
-                    let function = functions.get(function_name).unwrap();
+            Err(e) => {
+                println!("Error parsing function assignment: {}", e);
+            }
+        },
+        false => match utils::input::is_function_call(&input) {
+            true => {
+                if let Some(function_name) = input.split("(").nth(0) {
+                    if let Some(function) = functions.get(function_name) {
+                        let mut arguments = HashMap::<String, &str>::new();
+                        let args_str = input
+                            .split("(")
+                            .nth(1)
+                            .and_then(|s| s.split(")").nth(0))
+                            .unwrap_or("");
 
-                    let mut arguments = HashMap::<String, &str>::new();
-                    input
-                        .split("(")
-                        .nth(1)
-                        .unwrap()
-                        .split(")")
-                        .nth(0)
-                        .unwrap()
-                        .split(",")
-                        .enumerate()
-                        .for_each(|(index, token)| {
-                            arguments.insert(
-                                function
-                                    .arguments
-                                    .iter()
-                                    .find(|x| x.position == index)
-                                    .unwrap()
-                                    .name
-                                    .clone(),
-                                token,
-                            );
+                        args_str.split(",").enumerate().for_each(|(index, token)| {
+                            if let Some(arg_def) =
+                                function.arguments.iter().find(|x| x.position == index)
+                            {
+                                arguments.insert(arg_def.name.clone(), token);
+                            }
                         });
-                    // here we have 1,2 at positions 0,1 => lookup names from positions and then put them into map
-                    // .enumerate().for_each(|idx. arg_name| arguments_map.insert(k, v));
-                    // .collect::<Vec<&str>>();
 
-                    // foo(a,b) => foo(1,2) => replace_placeholders({a:1, b:2})
+                        match function.template.replace_placeholders(&arguments) {
+                            Ok(node) => {
+                                let result = node.calculate();
+                                println!("Result: {:?}", result);
+                            }
+                            Err(e) => {
+                                println!("Error replacing placeholders: {}", e);
+                            }
+                        }
+                    } else {
+                        println!("Error: Function '{}' not found", function_name);
+                    }
+                } else {
+                    println!("Error: Invalid function call syntax: missing opening parenthesis");
+                }
+            }
+            false => {
+                let result = calculate(input);
+                match result {
+                    Ok(result) => {
+                        println!("Result: {:?}", result);
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                    }
+                }
+            }
+        },
+    };
+}
 
-                    // get the function template, replace all placeholders with actual arguments, then call calculate
-                    let node = function.template.replace_placeholders(&arguments).unwrap();
-                    let result = node.calculate();
-                    println!("Result: {:?}", result);
+pub fn main(inputs: Option<Vec<String>>) {
+    let mut functions: HashMap<String, FunctionExpr> = HashMap::new();
+
+    match inputs {
+        Some(inputs) => {
+            for input in inputs {
+                handle_input(input.replace(" ", ""), &mut functions);
+            }
+        }
+        None => loop {
+            match utils::input::get_input() {
+                Ok(input) => {
+                    if !input.is_empty() {
+                        handle_input(input.replace(" ", ""), &mut functions);
+                    }
                 }
-                false => {
-                    let result = calculate(input);
-                    println!("Result: {:?}", result);
-                }
-            },
-        };
+                Err(_) => break,
+            }
+        },
     }
 }
 
@@ -100,13 +129,13 @@ mod tests {
             "fn foo(a, b) { a + b }".to_string(),
             "foo(1, 2)".to_string(),
         ];
-        main(inputs)
+        main(Some(inputs))
     }
 
     #[test]
     fn test_function_assignment_double_variable() {
         let inputs = vec!["fn foo (a) { a * a }".to_string(), "foo(2)".to_string()];
-        main(inputs)
+        main(Some(inputs))
     }
 
     proptest! {

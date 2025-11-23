@@ -3,10 +3,22 @@ use std::collections::HashMap;
 use crate::utils::operators::BinaryOperator;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Node {
+pub enum AbstractNode {
     Placeholder {
         arg_name: String,
     },
+    Operand {
+        value: f64,
+    },
+    BinaryExpr {
+        operation: BinaryOperator,
+        lhs: Box<AbstractNode>,
+        rhs: Box<AbstractNode>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Node {
     Operand {
         value: f64,
     },
@@ -17,31 +29,28 @@ pub enum Node {
     },
 }
 
-impl Node {
+impl AbstractNode {
     pub fn replace_placeholders(&self, arguments: &HashMap<String, &str>) -> Result<Node, String> {
         match self {
-            Node::Placeholder {
-                arg_name,
-            } => {
-                Ok(Node::Operand {
-                    value: arguments.get(arg_name).unwrap().parse().unwrap(),
-                })
-            }
-            Node::Operand { value } => Ok(Node::Operand {
+            AbstractNode::Placeholder { arg_name } => {
+                let arg_value = arguments.get(arg_name)
+                    .ok_or_else(|| format!("Missing argument: {}", arg_name))?;
+                let value = arg_value.parse::<f64>()
+                    .map_err(|e| format!("Failed to parse argument '{}' as number: {}", arg_name, e))?;
+                Ok(Node::Operand { value })
+            },
+            AbstractNode::Operand { value } => Ok(Node::Operand {
                 value: value.clone(),
             }),
-            Node::BinaryExpr {
+            AbstractNode::BinaryExpr {
                 operation,
                 lhs,
                 rhs,
             } => Ok(Node::BinaryExpr {
                 operation: operation.clone(),
-                lhs: Box::new(lhs.replace_placeholders(arguments).unwrap()),
-                rhs: Box::new(rhs.replace_placeholders(arguments).unwrap()),
+                lhs: Box::new(lhs.replace_placeholders(arguments)?),
+                rhs: Box::new(rhs.replace_placeholders(arguments)?),
             }),
-            // Node::FunctionExpr {
-
-            // }
         }
     }
 }
@@ -56,16 +65,13 @@ pub struct ArgumentDefinition {
 pub struct FunctionExpr {
     pub name: String,
     pub arguments: Vec<ArgumentDefinition>,
-    pub template: Box<Node>,
+    pub template: Box<AbstractNode>,
 }
 
 // fn
 impl Node {
     pub fn calculate(&self) -> Result<f64, String> {
         match self {
-            Node::Placeholder {
-                arg_name: _arg_name,
-            } => Err("Placeholder cannot be calculated".to_string()),
             Node::Operand { value } => Ok(*value),
             Node::BinaryExpr {
                 operation,

@@ -1,9 +1,12 @@
 use std::io;
 
-pub fn get_input() -> String {
+pub fn get_input() -> Result<String, String> {
     let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
-    input
+    match io::stdin().read_line(&mut input) {
+        Ok(0) => Err("EOF reached".to_string()),
+        Ok(_) => Ok(input.trim().to_string()),
+        Err(e) => Err(format!("Error reading input: {}", e)),
+    }
 }
 
 pub fn is_function_assignment(input: &str) -> bool {
@@ -23,8 +26,6 @@ pub fn get_normalized_input(input: &str) -> Result<Vec<String>, String> {
         .filter(|c| !c.is_whitespace())
         .collect::<String>()
         .replace('÷', "/");
-
-    println!("Normalized: {:?}", normalized);
 
     let mut parts = Vec::new();
     // to hold a number that is split across multiple chars

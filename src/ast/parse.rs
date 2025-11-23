@@ -1,5 +1,5 @@
 use crate::{
-    ast::ast::{ArgumentDefinition, FunctionExpr, Node},
+    ast::ast::{AbstractNode, ArgumentDefinition, FunctionExpr},
     utils::{
         input::get_normalized_input,
         operators::{Associativity, get_operator_info},
@@ -12,33 +12,37 @@ pub fn parse_function_assignment(input: String) -> Result<FunctionExpr, String> 
     let arg_names = input
         .split("(")
         .nth(1)
-        .unwrap()
+        .ok_or_else(|| "Invalid function syntax: missing opening parenthesis".to_string())?
         .split(")")
         .nth(0)
-        .unwrap()
+        .ok_or_else(|| "Invalid function syntax: missing closing parenthesis".to_string())?
         .split(",")
         .collect::<Vec<&str>>();
 
     let function_name = input
         .split("fn")
         .nth(1)
-        .unwrap()
+        .ok_or_else(|| "Invalid function syntax: missing 'fn' keyword".to_string())?
         .split("(")
         .nth(0)
-        .unwrap()
+        .ok_or_else(|| {
+            "Invalid function syntax: missing opening parenthesis after 'fn'".to_string()
+        })?
         .to_string();
 
     let function_body = input
         .split("{")
         .nth(1)
-        .unwrap()
+        .ok_or_else(|| "Invalid function syntax: missing opening brace".to_string())?
         .split("}")
         .nth(0)
-        .unwrap()
+        .ok_or_else(|| "Invalid function syntax: missing closing brace".to_string())?
         .to_string();
 
     // TODO: deal with placeholder nodes
-    let body = infix_to_ast(get_normalized_input(function_body.as_str()).unwrap()).unwrap();
+    let normalized = get_normalized_input(function_body.as_str())
+        .map_err(|e| format!("Failed to normalize function body: {}", e))?;
+    let body = infix_to_ast(normalized)?;
 
     Ok(FunctionExpr {
         name: function_name,
@@ -54,21 +58,18 @@ pub fn parse_function_assignment(input: String) -> Result<FunctionExpr, String> 
     })
 }
 
-pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
-    println!("Input: {:?}", input);
-    let mut output: Vec<Node> = Vec::new();
+pub fn infix_to_ast(input: Vec<String>) -> Result<AbstractNode, String> {
+    let mut output: Vec<AbstractNode> = Vec::new();
     let mut operators: Vec<String> = Vec::new();
 
     for token in input.into_iter() {
-        if token.parse::<f64>().is_ok() {
-            output.push(Node::Operand {
-                value: token.parse().unwrap(),
-            });
+        if let Ok(value) = token.parse::<f64>() {
+            output.push(AbstractNode::Operand { value });
             continue;
         }
 
         if token.chars().all(|c| c.is_ascii_alphabetic()) {
-            output.push(Node::Placeholder { arg_name: token });
+            output.push(AbstractNode::Placeholder { arg_name: token });
             continue;
         }
 
@@ -81,22 +82,20 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
                             break;
                         }
 
-                        let o1_config = get_operator_info(&token).unwrap();
-                        let o2_config = get_operator_info(o2).unwrap();
+                        let o1_config = get_operator_info(&token)
+                            .ok_or_else(|| format!("Unknown operator: {}", token))?;
+                        let o2_config = get_operator_info(o2)
+                            .ok_or_else(|| format!("Unknown operator: {}", o2))?;
                         if o2_config.precedence > o1_config.precedence
                             || (o2_config.precedence == o1_config.precedence
                                 && o1_config.associativity == Associativity::Left)
                         {
-                            let operation =
-                                match get_operator_info(operators.pop().unwrap().as_str()) {
-                                    Some(info) => info.operation,
-                                    None => {
-                                        return Err(format!(
-                                            "{} is not a valid operator",
-                                            operators.pop().unwrap()
-                                        ))?;
-                                    }
-                                };
+                            let operator_str = operators.pop().ok_or_else(|| {
+                                "Internal error: operator stack is empty".to_string()
+                            })?;
+                            let operation = get_operator_info(operator_str.as_str())
+                                .ok_or_else(|| format!("{} is not a valid operator", operator_str))?
+                                .operation;
                             let right = match output.pop() {
                                 Some(right) => right,
                                 None => return Err("Not enough values on stack".to_string()),
@@ -105,7 +104,7 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
                                 Some(left) => left,
                                 None => return Err("Not enough values on stack".to_string()),
                             };
-                            output.push(Node::BinaryExpr {
+                            output.push(AbstractNode::BinaryExpr {
                                 operation,
                                 lhs: Box::new(left),
                                 rhs: Box::new(right),
@@ -132,16 +131,12 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
                                 break;
                             }
 
-                            let operation =
-                                match get_operator_info(operators.pop().unwrap().as_str()) {
-                                    Some(info) => info.operation,
-                                    None => {
-                                        return Err(format!(
-                                            "{} is not a valid operator",
-                                            operators.pop().unwrap()
-                                        ));
-                                    }
-                                };
+                            let operator_str = operators.pop().ok_or_else(|| {
+                                "Internal error: operator stack is empty".to_string()
+                            })?;
+                            let operation = get_operator_info(operator_str.as_str())
+                                .ok_or_else(|| format!("{} is not a valid operator", operator_str))?
+                                .operation;
                             let right = match output.pop() {
                                 Some(right) => right,
                                 None => return Err("Not enough values on stack".to_string()),
@@ -150,7 +145,7 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
                                 Some(left) => left,
                                 None => return Err("Not enough values on stack".to_string()),
                             };
-                            output.push(Node::BinaryExpr {
+                            output.push(AbstractNode::BinaryExpr {
                                 operation,
                                 lhs: Box::new(left),
                                 rhs: Box::new(right),
@@ -160,7 +155,8 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
                     }
                 }
 
-                let o = operators.pop().unwrap();
+                let o = operators.pop()
+                    .ok_or_else(|| "Internal error: operator stack is empty when expecting '('. Mismatched parentheses found!".to_string())?;
                 if o != "(" {
                     return Err("Expected left parenthesis".to_string());
                 }
@@ -173,15 +169,9 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
         match o.as_str() {
             "(" => return Err("Mismatched parentheses found!".to_string()),
             _ => {
-                let operation = match get_operator_info(o.as_str()) {
-                    Some(info) => info.operation,
-                    None => {
-                        return Err(format!(
-                            "{} is not a valid operator",
-                            operators.pop().unwrap()
-                        ));
-                    }
-                };
+                let operation = get_operator_info(o.as_str())
+                    .ok_or_else(|| format!("{} is not a valid operator", o))?
+                    .operation;
                 let right = match output.pop() {
                     Some(right) => right,
                     None => return Err("Not enough values on stack".to_string()),
@@ -190,7 +180,7 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
                     Some(left) => left,
                     None => return Err("Not enough values on stack".to_string()),
                 };
-                output.push(Node::BinaryExpr {
+                output.push(AbstractNode::BinaryExpr {
                     operation,
                     lhs: Box::new(left),
                     rhs: Box::new(right),
@@ -199,13 +189,14 @@ pub fn infix_to_ast(input: Vec<String>) -> Result<Node, String> {
         }
     }
     if output.len() != 1 {
-        println!("Output: {:?}", output);
         return Err(format!(
             "Invalid expression: {} values remain",
             output.len()
         ));
     }
-    Ok(output.pop().unwrap())
+    Ok(output
+        .pop()
+        .ok_or_else(|| "Internal error: output stack is empty".to_string())?)
 }
 
 #[cfg(test)]
@@ -220,10 +211,10 @@ mod tests {
         let input = tokens(&["4", "+", "5"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Addition,
-                lhs: Box::new(Node::Operand { value: 4.0 }),
-                rhs: Box::new(Node::Operand { value: 5.0 }),
+                lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
             })
         )
     }
@@ -233,10 +224,10 @@ mod tests {
         let input = tokens(&["4", "-", "5"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Subtraction,
-                lhs: Box::new(Node::Operand { value: 4.0 }),
-                rhs: Box::new(Node::Operand { value: 5.0 }),
+                lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
             })
         )
     }
@@ -246,10 +237,10 @@ mod tests {
         let input = tokens(&["4", "*", "5"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Multiplication,
-                lhs: Box::new(Node::Operand { value: 4.0 }),
-                rhs: Box::new(Node::Operand { value: 5.0 }),
+                lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
             })
         )
     }
@@ -259,10 +250,10 @@ mod tests {
         let input = tokens(&["4", "/", "5"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Division,
-                lhs: Box::new(Node::Operand { value: 4.0 }),
-                rhs: Box::new(Node::Operand { value: 5.0 }),
+                lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
             })
         )
     }
@@ -272,10 +263,10 @@ mod tests {
         let input = tokens(&["4", "^", "5"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Index,
-                lhs: Box::new(Node::Operand { value: 4.0 }),
-                rhs: Box::new(Node::Operand { value: 5.0 }),
+                lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
             })
         )
     }
@@ -285,13 +276,13 @@ mod tests {
         let input = tokens(&["4", "+", "(", "1", "-", "5", ")"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Addition,
-                lhs: Box::new(Node::Operand { value: 4.0 }),
-                rhs: Box::new(Node::BinaryExpr {
+                lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                rhs: Box::new(AbstractNode::BinaryExpr {
                     operation: BinaryOperator::Subtraction,
-                    lhs: Box::new(Node::Operand { value: 1.0 }),
-                    rhs: Box::new(Node::Operand { value: 5.0 }),
+                    lhs: Box::new(AbstractNode::Operand { value: 1.0 }),
+                    rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
                 }),
             })
         );
@@ -301,17 +292,17 @@ mod tests {
         let input = tokens(&["4", "+", "5", "-", "2", "*", "5"]);
         assert_eq!(
             infix_to_ast(input),
-            Ok(Node::BinaryExpr {
+            Ok(AbstractNode::BinaryExpr {
                 operation: BinaryOperator::Subtraction,
-                lhs: Box::new(Node::BinaryExpr {
+                lhs: Box::new(AbstractNode::BinaryExpr {
                     operation: BinaryOperator::Addition,
-                    lhs: Box::new(Node::Operand { value: 4.0 }),
-                    rhs: Box::new(Node::Operand { value: 5.0 })
+                    lhs: Box::new(AbstractNode::Operand { value: 4.0 }),
+                    rhs: Box::new(AbstractNode::Operand { value: 5.0 })
                 }),
-                rhs: Box::new(Node::BinaryExpr {
+                rhs: Box::new(AbstractNode::BinaryExpr {
                     operation: BinaryOperator::Multiplication,
-                    lhs: Box::new(Node::Operand { value: 2.0 }),
-                    rhs: Box::new(Node::Operand { value: 5.0 }),
+                    lhs: Box::new(AbstractNode::Operand { value: 2.0 }),
+                    rhs: Box::new(AbstractNode::Operand { value: 5.0 }),
                 }),
             })
         );
@@ -334,12 +325,12 @@ mod tests {
                         name: "b".to_string(),
                     }
                 ],
-                template: Box::new(Node::BinaryExpr {
+                template: Box::new(AbstractNode::BinaryExpr {
                     operation: BinaryOperator::Addition,
-                    lhs: Box::new(Node::Placeholder {
+                    lhs: Box::new(AbstractNode::Placeholder {
                         arg_name: "a".to_string(),
                     }),
-                    rhs: Box::new(Node::Placeholder {
+                    rhs: Box::new(AbstractNode::Placeholder {
                         arg_name: "b".to_string(),
                     }),
                 }),
@@ -353,13 +344,13 @@ mod tests {
     //     ]);
     //     assert_eq!(
     //         infix_to_ast(input),
-    //         Ok(Node::FunctionExpr {
+    //         Ok(AbstractNode::FunctionExpr {
     //             name: "foo".to_string(),
     //             num_arguments: 2,
-    //             template: Box::new(Node::BinaryExpr {
+    //             template: Box::new(AbstractNode::BinaryExpr {
     //                 operation: BinaryOperator::Addition,
-    //                 lhs: Box::new(Node::Placeholder { position: 0 }),
-    //                 rhs: Box::new(Node::Placeholder { position: 1 }),
+    //                 lhs: Box::new(AbstractNode::Placeholder { position: 0 }),
+    //                 rhs: Box::new(AbstractNode::Placeholder { position: 1 }),
     //             }),
     //         })
     //     );
